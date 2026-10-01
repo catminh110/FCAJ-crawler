@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FCAJ Crawler & PDF Studio - AWS Study Group</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- Top Header -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+            <path d="M12 6v6"/>
+            <path d="M9 9h6"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>FCAJ Crawler & PDF Studio</h1>
+          <p>Thu thập toàn bộ dữ liệu & xuất sách PDF từ <span>cloudjourney.awsstudygroup.com</span></p>
+        </div>
+      </div>
+
+      <div class="nav-stats">
+        <div class="stat-pill">
+          <span class="stat-label">Tổng Workshop</span>
+          <span class="stat-value" id="stat-total-ws">127</span>
+        </div>
+        <div class="stat-pill highlight">
+          <span class="stat-label">Đã xuất PDF</span>
+          <span class="stat-value" id="stat-completed-pdf">0</span>
+        </div>
+        <button id="btn-scan" class="btn btn-secondary" title="Quét cập nhật lại danh sách từ trang chủ">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+          Quét Catalog
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-content">
+
+      <!-- Action & Control Bar -->
+      <section class="control-panel card">
+        <div class="control-row top-row">
+          <div class="search-box">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" id="input-search" placeholder="Tìm theo tên workshop, ID (ví dụ: 000001, EC2, S3, RDS)...">
+          </div>
+
+          <div class="options-group">
+            <div class="select-wrapper">
+              <label for="select-lang">Ngôn ngữ:</label>
+              <select id="select-lang">
+                <option value="vi" selected>Tiếng Việt (VI)</option>
+                <option value="en">English (EN)</option>
+                <option value="both">Cả hai (VI & EN)</option>
+              </select>
+            </div>
+
+            <div class="action-buttons">
+              <button id="btn-select-all" class="btn btn-outline">Chọn tất cả</button>
+              <button id="btn-deselect-all" class="btn btn-outline">Bỏ chọn</button>
+              <button id="btn-start-crawl" class="btn btn-primary">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Bắt đầu cào PDF (<span id="selected-count">0</span>)
+              </button>
+              <button id="btn-stop-crawl" class="btn btn-danger" style="display: none;">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="6" y="6" width="12" height="12"/>
+                </svg>
+                Dừng tiến trình
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Filters -->
+        <div class="category-pills" id="category-pills">
+          <button class="pill active" data-cat="all">Tất cả (127)</button>
+          <!-- Category pills injected dynamically -->
+        </div>
+      </section>
+
+      <!-- Live Progress & Terminal Section -->
+      <section class="live-status-section card" id="progress-card">
+        <div class="progress-header">
+          <div class="progress-title-group">
+            <span class="status-indicator" id="status-dot"></span>
+            <span class="status-text" id="status-text">Sẵn sàng</span>
+          </div>
+          <span class="progress-percent" id="progress-percent">0%</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="progress-fill" style="width: 0%;"></div>
+        </div>
+        <div class="progress-subtext" id="progress-subtext">Chọn các workshop bên dưới và nhấn "Bắt đầu cào PDF".</div>
+
+        <!-- Collapsible Live Log Terminal -->
+        <div class="terminal-wrapper">
+          <div class="terminal-bar">
+            <span>Live Terminal Log</span>
+            <button id="btn-clear-logs" class="btn-text">Xóa log</button>
+          </div>
+          <pre class="terminal-screen" id="terminal-screen">[Hệ thống] Trình quản trị FCAJ Crawler đã khởi động thành công.
+[Hệ thống] Sẵn sàng cào toàn bộ web con cloudjourney.awsstudygroup.com sang PDF.</pre>
+        </div>
+      </section>
+
+      <!-- Two-column view: Workshops selection & Completed Downloads -->
+      <div class="content-grid">
+        
+        <!-- Left Column: Workshops List -->
+        <section class="workshops-section card">
+          <div class="section-header">
+            <h2>Danh sách Workshop & Trang con</h2>
+            <div class="counter-badge"><span id="visible-count">0</span> workshop hiển thị</div>
+          </div>
+
+          <div class="workshops-table-container">
+            <table class="workshops-table">
+              <thead>
+                <tr>
+                  <th width="40"><input type="checkbox" id="th-checkbox"></th>
+                  <th width="100">ID</th>
+                  <th>Tên Workshop</th>
+                  <th>Danh mục</th>
+                  <th width="120">Trạng thái</th>
+                  <th width="120" style="text-align: right;">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="workshops-tbody">
+                <!-- Injected via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Right Column: Downloaded Library -->
+        <section class="downloads-section card">
+          <div class="section-header">
+            <h2>Kho sách PDF đã xuất (<span id="download-count">0</span>)</h2>
+            <button id="btn-refresh-downloads" class="btn btn-outline btn-sm">Làm mới</button>
+          </div>
+
+          <div class="downloads-list" id="downloads-list">
+            <div class="empty-state">Chưa có file PDF nào được xuất. Hãy chọn workshop và bắt đầu cào!</div>
+          </div>
+        </section>
+
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>FCAJ Crawler &amp; PDF Studio • Hỗ trợ học tập AWS Study Group Vietnam • Xuất bản offline chất lượng cao.</p>
+    </footer>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
