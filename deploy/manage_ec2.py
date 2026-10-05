@@ -113,6 +113,50 @@ def cmd_stop(args):
     print(f"✅ Đã dừng máy ảo {inst_id} thành công! Không còn tính phí CPU/RAM.")
 
 
+def cmd_budget(args):
+    print("💰 Đang kiểm tra thông tin ngân sách & kiểm soát credit trên AWS...")
+    
+    # Check AWS Budgets
+    try:
+        # Get account ID
+        ident = run_aws_cmd(["sts", "get-caller-identity"])
+        acc_id = ident.get("Account")
+        if acc_id:
+            budgets = run_aws_cmd(["budgets", "describe-budgets", "--account-id", acc_id])
+            b_list = budgets.get("Budgets", [])
+        else:
+            b_list = []
+    except Exception as e:
+        b_list = []
+
+    print("\n" + "=" * 60)
+    print("🛡️  KẾ HOẠCH & KIỂM SOÁT CHI PHÍ ($20 TRONG 3 THÁNG)")
+    print("=" * 60)
+    print("• Ngân sách tổng     : $20.00 cho 3 tháng (~$6.67 / tháng)")
+    print("• Giá chạy máy ảo    : t3.small (~$0.0208 / giờ chạy)")
+    print("• Khi máy ảo TẮT     : $0.00 / giờ CPU & RAM (chỉ tính lưu trữ EBS)")
+    print("• Lưu trữ EBS gp3    : 30GB (~$2.40 / tháng)")
+    print("• Cơ chế Auto-Stop   : CloudWatch tự động ngắt máy sau 15 phút idle (<2% CPU)")
+    print("• Giờ cào tối đa/thg : ~200 giờ cào thực tế (cào 127 bài chỉ tốn ~2-3 giờ)")
+    print("-" * 60)
+    
+    if b_list:
+        print("📊 CÁC BUDGET ĐANG THEO DÕI TRÊN AWS ACCOUNT:")
+        for b in b_list:
+            b_name = b.get("BudgetName")
+            limit = b.get("BudgetLimit", {}).get("Amount", "N/A")
+            unit = b.get("BudgetLimit", {}).get("Unit", "USD")
+            spend = b.get("CalculatedSpend", {}).get("ActualSpend", {}).get("Amount", "0.0")
+            print(f"  - {b_name}: Đã tiêu ${spend} / Hạn mức ${limit} {unit}")
+    
+    print("-" * 60)
+    print("💡 MẸO TIẾT KIỆM CREDIT:")
+    print("  1. Khi cào xong, gõ: python deploy/manage_ec2.py stop")
+    print("  2. Khi cần cào tiếp, gõ: python deploy/manage_ec2.py start")
+    print("  3. Nếu bạn quên tắt máy, CloudWatch sẽ tự động STOP máy sau 15 phút!")
+    print("=" * 60 + "\n")
+
+
 def cmd_reboot(args):
     info = get_instance_info()
     inst_id = info["instance_id"]
@@ -137,6 +181,7 @@ def main():
     parser = argparse.ArgumentParser(description="Quản lý máy ảo FCAJ Crawler trên AWS EC2")
     sub = parser.add_subparsers(dest="command", help="Lệnh thực hiện")
     sub.add_parser("status", help="Xem trạng thái máy ảo và link web")
+    sub.add_parser("budget", help="Xem ngân sách $20/3 tháng và kiểm soát chi tiêu")
     sub.add_parser("start", help="Bật máy ảo EC2")
     sub.add_parser("stop", help="Tắt máy ảo EC2 để tiết kiệm chi phí")
     sub.add_parser("reboot", help="Khởi động lại máy ảo")
@@ -149,6 +194,7 @@ def main():
 
     cmds = {
         "status": cmd_status,
+        "budget": cmd_budget,
         "start": cmd_start,
         "stop": cmd_stop,
         "reboot": cmd_reboot,

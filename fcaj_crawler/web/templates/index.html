@@ -30,19 +30,25 @@
       </div>
 
       <div class="nav-stats">
+        <div class="stat-pill credit-pill" title="Ngân sách khống chế $20 trong 3 tháng (~$6.67/tháng). Tự động tắt sau 15 phút idle.">
+          <span class="credit-icon">⚡</span>
+          <span class="stat-label">Budget:</span>
+          <span class="stat-value credit-val">$20 / 3 thg</span>
+          <span class="auto-stop-tag">Auto-Stop 15m</span>
+        </div>
         <div class="stat-pill">
           <span class="stat-label">Tổng Workshop</span>
           <span class="stat-value" id="stat-total-ws">127</span>
         </div>
         <div class="stat-pill highlight">
-          <span class="stat-label">Workshop đã xuất</span>
+          <span class="stat-label">Đã xuất bản</span>
           <span class="stat-value" id="stat-completed-pdf">0</span>
         </div>
         <button id="btn-scan" class="btn btn-secondary" title="Quét cập nhật lại danh sách từ trang chủ">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="icon spin-on-active" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
           </svg>
-          Quét Catalog
+          <span id="btn-scan-text">Quét Catalog</span>
         </button>
       </div>
     </header>
@@ -50,18 +56,45 @@
     <!-- Main Container -->
     <main class="main-content">
 
+      <!-- Budget & Usage Advisory Notice -->
+      <section class="budget-advisory-card">
+        <div class="advisory-icon">🛡️</div>
+        <div class="advisory-content">
+          <div class="advisory-title">Kiểm soát chi phí AWS: Ngân sách $20 cho 3 tháng (~$6.67/tháng)</div>
+          <div class="advisory-desc">
+            Máy ảo EC2 <code>t3.small</code> tốn ~$0.0208/giờ. Hệ thống đã cài CloudWatch tự động <strong>STOP máy ảo sau 15 phút nhàn rỗi</strong> để tránh hao credit. Khi cào xong, bạn có thể chủ động tắt máy ngay bằng: <code>python3 deploy/manage_ec2.py stop</code>.
+          </div>
+        </div>
+        <button id="btn-close-advisory" class="btn-text advisory-close" title="Ẩn thông báo">✕</button>
+      </section>
+
       <!-- Action & Control Bar -->
       <section class="control-panel card">
+        <!-- Top Toolbar: Search + Status Filter -->
         <div class="control-row top-row">
           <div class="search-box">
             <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"/>
               <line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <input type="text" id="input-search" placeholder="Tìm theo tên workshop, ID (ví dụ: 000001, EC2, S3, RDS)...">
+            <input type="text" id="input-search" placeholder="Tìm theo tên workshop, mã ID (ví dụ: 000001, EC2, S3, RDS, EKS)...">
+            <button id="btn-clear-search" class="btn-clear-search" title="Xóa tìm kiếm" style="display: none;">✕</button>
           </div>
 
-          <div class="options-group">
+          <!-- Status Filter Tabs -->
+          <div class="status-filter-group">
+            <span class="filter-label">Lọc:</span>
+            <div class="btn-group-toggle">
+              <button class="btn-toggle active" data-status="all">Tất cả (<span id="count-filter-all">127</span>)</button>
+              <button class="btn-toggle" data-status="pending">Chưa cào (<span id="count-filter-pending">127</span>)</button>
+              <button class="btn-toggle" data-status="done">Đã có file (<span id="count-filter-done">0</span>)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secondary Toolbar: Config & Execution Actions -->
+        <div class="control-row action-row">
+          <div class="config-selectors">
             <div class="select-wrapper">
               <label for="select-lang">Ngôn ngữ:</label>
               <select id="select-lang">
@@ -79,23 +112,27 @@
                 <option value="pdf">Chỉ PDF</option>
               </select>
             </div>
+          </div>
 
-            <div class="action-buttons">
-              <button id="btn-select-all" class="btn btn-outline">Chọn tất cả</button>
-              <button id="btn-deselect-all" class="btn btn-outline">Bỏ chọn</button>
-              <button id="btn-start-crawl" class="btn btn-primary">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="5 3 19 12 5 21 5 3"/>
-                </svg>
-                Bắt đầu cào PDF (<span id="selected-count">0</span>)
-              </button>
-              <button id="btn-stop-crawl" class="btn btn-danger" style="display: none;">
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="6" y="6" width="12" height="12"/>
-                </svg>
-                Dừng tiến trình
-              </button>
-            </div>
+          <div class="action-buttons">
+            <button id="btn-select-all" class="btn btn-outline" title="Chọn toàn bộ workshop đang hiển thị">
+              Chọn tất cả
+            </button>
+            <button id="btn-deselect-all" class="btn btn-outline" title="Bỏ chọn tất cả">
+              Bỏ chọn
+            </button>
+            <button id="btn-start-crawl" class="btn btn-primary" title="Bắt đầu xuất bản các workshop đã chọn">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              <span id="btn-start-crawl-label">Bắt đầu xuất bản (<span id="selected-count">0</span>)</span>
+            </button>
+            <button id="btn-stop-crawl" class="btn btn-danger" style="display: none;" title="Dừng tiến trình crawl hiện tại">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="6" y="6" width="12" height="12"/>
+              </svg>
+              Dừng tiến trình
+            </button>
           </div>
         </div>
 
@@ -113,21 +150,33 @@
             <span class="status-indicator" id="status-dot"></span>
             <span class="status-text" id="status-text">Sẵn sàng</span>
           </div>
-          <span class="progress-percent" id="progress-percent">0%</span>
+          <div class="progress-actions">
+            <span class="progress-percent" id="progress-percent">0%</span>
+            <button id="btn-toggle-terminal" class="btn-toggle-terminal" title="Thu gọn/Mở rộng màn hình log">
+              <span id="terminal-toggle-text">Thu gọn Log</span>
+              <svg class="icon-toggle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="18 15 12 9 6 15"></polyline>
+              </svg>
+            </button>
+          </div>
         </div>
         <div class="progress-bar-container">
           <div class="progress-bar-fill" id="progress-fill" style="width: 0%;"></div>
         </div>
-        <div class="progress-subtext" id="progress-subtext">Chọn các workshop bên dưới và nhấn "Bắt đầu cào PDF".</div>
+        <div class="progress-subtext" id="progress-subtext">Chọn các workshop bên dưới và nhấn "Bắt đầu xuất bản".</div>
 
         <!-- Collapsible Live Log Terminal -->
-        <div class="terminal-wrapper">
+        <div class="terminal-wrapper" id="terminal-wrapper">
           <div class="terminal-bar">
-            <span>Live Terminal Log</span>
-            <button id="btn-clear-logs" class="btn-text">Xóa log</button>
+            <span>Terminal Log</span>
+            <div class="terminal-tools">
+              <button id="btn-copy-logs" class="btn-text" title="Sao chép toàn bộ log">Sao chép</button>
+              <button id="btn-clear-logs" class="btn-text" title="Xóa màn hình log">Xóa log</button>
+            </div>
           </div>
           <pre class="terminal-screen" id="terminal-screen">[Hệ thống] Trình quản trị FCAJ Crawler đã khởi động thành công.
-[Hệ thống] Sẵn sàng cào toàn bộ web con cloudjourney.awsstudygroup.com sang PDF.</pre>
+[Hệ thống] Hỗ trợ xuất Markdown (.md) và PDF A4 chuẩn in ấn.
+[Chi phí] Đã thiết lập Auto-Stop sau 15 phút idle để duy trì ngân sách $20 trong 3 tháng.</pre>
         </div>
       </section>
 
@@ -137,20 +186,25 @@
         <!-- Left Column: Workshops List -->
         <section class="workshops-section card">
           <div class="section-header">
-            <h2>Danh sách Workshop & Trang con</h2>
-            <div class="counter-badge"><span id="visible-count">0</span> workshop hiển thị</div>
+            <div>
+              <h2>Danh sách Workshop</h2>
+              <div class="counter-badge"><span id="visible-count">0</span> workshop hiển thị</div>
+            </div>
+            <div class="table-quick-actions">
+              <button id="btn-select-visible" class="btn btn-outline btn-sm" title="Chọn tất cả bài đang thấy">Chọn trang này</button>
+            </div>
           </div>
 
           <div class="workshops-table-container">
             <table class="workshops-table">
               <thead>
                 <tr>
-                  <th width="40"><input type="checkbox" id="th-checkbox"></th>
-                  <th width="100">ID</th>
+                  <th width="40"><input type="checkbox" id="th-checkbox" title="Chọn / Bỏ chọn toàn bộ trang"></th>
+                  <th width="90">ID</th>
                   <th>Tên Workshop</th>
-                  <th>Danh mục</th>
-                  <th width="120">Trạng thái</th>
-                  <th width="120" style="text-align: right;">Thao tác</th>
+                  <th width="180">Danh mục</th>
+                  <th width="110">Trạng thái</th>
+                  <th width="140" style="text-align: right;">Thao tác</th>
                 </tr>
               </thead>
               <tbody id="workshops-tbody">
@@ -163,12 +217,26 @@
         <!-- Right Column: Downloaded Library -->
         <section class="downloads-section card">
           <div class="section-header">
-            <h2>Kho tài liệu đã xuất – MD / PDF (<span id="download-count">0</span>)</h2>
-            <button id="btn-refresh-downloads" class="btn btn-outline btn-sm">Làm mới</button>
+            <div>
+              <h2>Kho tài liệu đã xuất (<span id="download-count">0</span>)</h2>
+              <div class="counter-badge">Markdown &amp; PDF</div>
+            </div>
+            <div class="dl-header-actions">
+              <button id="btn-refresh-downloads" class="btn btn-outline btn-sm" title="Làm mới danh sách file">
+                Làm mới
+              </button>
+            </div>
+          </div>
+
+          <!-- Download Filter Tabs -->
+          <div class="dl-filter-pills">
+            <button class="dl-pill active" data-dl-filter="all">Tất cả (<span id="dl-count-all">0</span>)</button>
+            <button class="dl-pill" data-dl-filter="pdf">PDF (<span id="dl-count-pdf">0</span>)</button>
+            <button class="dl-pill" data-dl-filter="md">Markdown (<span id="dl-count-md">0</span>)</button>
           </div>
 
           <div class="downloads-list" id="downloads-list">
-            <div class="empty-state">Chưa có file PDF nào được xuất. Hãy chọn workshop và bắt đầu cào!</div>
+            <div class="empty-state">Chưa có file nào được xuất. Hãy chọn workshop và bắt đầu cào!</div>
           </div>
         </section>
 
@@ -178,7 +246,10 @@
 
     <!-- Footer -->
     <footer class="app-footer">
-      <p>FCAJ Crawler &amp; PDF Studio • Hỗ trợ học tập AWS Study Group Vietnam • Xuất bản offline chất lượng cao.</p>
+      <div class="footer-content">
+        <p>FCAJ Crawler &amp; PDF Studio • Hỗ trợ học tập AWS Study Group Vietnam • Xuất bản offline chất lượng cao.</p>
+        <p class="footer-sub">AWS EC2 <code>t3.small</code> • Ngân sách an toàn <strong>$20 / 3 tháng</strong> • Auto-Stop sau 15 phút idle.</p>
+      </div>
     </footer>
   </div>
 

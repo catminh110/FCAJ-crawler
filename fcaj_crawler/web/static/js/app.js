@@ -1,27 +1,40 @@
-// FCAJ Crawler Dashboard Client
+// FCAJ Crawler Dashboard Client - Enhanced UI & Credit Management
 
 let allWorkshops = [];
 let categories = [];
 let selectedIds = new Set();
 let currentCategory = 'all';
+let currentStatusFilter = 'all'; // 'all' | 'pending' | 'done'
+let currentDlFilter = 'all'; // 'all' | 'pdf' | 'md'
 let isRunning = false;
 let completedPdfs = new Map(); // id -> file info
+let allDownloadedFiles = [];
 
 // DOM Elements
 const tbody = document.getElementById('workshops-tbody');
 const categoryPillsContainer = document.getElementById('category-pills');
 const searchInput = document.getElementById('input-search');
+const btnClearSearch = document.getElementById('btn-clear-search');
 const langSelect = document.getElementById('select-lang');
+const formatSelect = document.getElementById('select-format');
 const btnSelectAll = document.getElementById('btn-select-all');
 const btnDeselectAll = document.getElementById('btn-deselect-all');
+const btnSelectVisible = document.getElementById('btn-select-visible');
 const btnStartCrawl = document.getElementById('btn-start-crawl');
+const btnStartCrawlLabel = document.getElementById('btn-start-crawl-label');
 const btnStopCrawl = document.getElementById('btn-stop-crawl');
 const btnScan = document.getElementById('btn-scan');
+const btnScanText = document.getElementById('btn-scan-text');
 const thCheckbox = document.getElementById('th-checkbox');
 const selectedCountSpan = document.getElementById('selected-count');
 const visibleCountSpan = document.getElementById('visible-count');
 const statTotalWs = document.getElementById('stat-total-ws');
 const statCompletedPdf = document.getElementById('stat-completed-pdf');
+
+// Filter counts
+const countFilterAll = document.getElementById('count-filter-all');
+const countFilterPending = document.getElementById('count-filter-pending');
+const countFilterDone = document.getElementById('count-filter-done');
 
 // Progress & Terminal Elements
 const statusDot = document.getElementById('status-dot');
@@ -29,32 +42,100 @@ const statusText = document.getElementById('status-text');
 const progressPercent = document.getElementById('progress-percent');
 const progressFill = document.getElementById('progress-fill');
 const progressSubtext = document.getElementById('progress-subtext');
+const terminalWrapper = document.getElementById('terminal-wrapper');
 const terminalScreen = document.getElementById('terminal-screen');
+const btnToggleTerminal = document.getElementById('btn-toggle-terminal');
+const terminalToggleText = document.getElementById('terminal-toggle-text');
 const btnClearLogs = document.getElementById('btn-clear-logs');
+const btnCopyLogs = document.getElementById('btn-copy-logs');
+
+// Downloads Library Elements
 const downloadsList = document.getElementById('downloads-list');
 const downloadCountSpan = document.getElementById('download-count');
 const btnRefreshDownloads = document.getElementById('btn-refresh-downloads');
+const dlCountAll = document.getElementById('dl-count-all');
+const dlCountPdf = document.getElementById('dl-count-pdf');
+const dlCountMd = document.getElementById('dl-count-md');
+
+// Advisory Banner
+const budgetAdvisoryCard = document.querySelector('.budget-advisory-card');
+const btnCloseAdvisory = document.getElementById('btn-close-advisory');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+  initAdvisoryState();
   loadCatalog();
   loadDownloads();
   connectSSE();
   bindEvents();
 });
 
-function bindEvents() {
-  searchInput.addEventListener('input', renderWorkshops);
+function initAdvisoryState() {
+  if (btnCloseAdvisory && budgetAdvisoryCard) {
+    if (localStorage.getItem('fcaj_advisory_hidden') === 'true') {
+      budgetAdvisoryCard.style.display = 'none';
+    }
+    btnCloseAdvisory.addEventListener('click', () => {
+      budgetAdvisoryCard.style.display = 'none';
+      localStorage.setItem('fcaj_advisory_hidden', 'true');
+    });
+  }
+}
 
+function bindEvents() {
+  // Search
+  searchInput.addEventListener('input', () => {
+    btnClearSearch.style.display = searchInput.value ? 'block' : 'none';
+    renderWorkshops();
+  });
+
+  btnClearSearch.addEventListener('click', () => {
+    searchInput.value = '';
+    btnClearSearch.style.display = 'none';
+    renderWorkshops();
+    searchInput.focus();
+  });
+
+  // Status Filter Tabs
+  document.querySelectorAll('.btn-group-toggle .btn-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.btn-group-toggle .btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentStatusFilter = btn.dataset.status;
+      renderWorkshops();
+    });
+  });
+
+  // Downloads Filter Tabs
+  document.querySelectorAll('.dl-filter-pills .dl-pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.dl-filter-pills .dl-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentDlFilter = btn.dataset.dlFilter;
+      renderDownloads();
+    });
+  });
+
+  // Select / Deselect
   btnSelectAll.addEventListener('click', () => {
-    getFilteredWorkshops().forEach(w => selectedIds.add(w.id));
+    allWorkshops.forEach(w => selectedIds.add(w.id));
     updateSelectionUI();
+    renderWorkshops();
   });
 
   btnDeselectAll.addEventListener('click', () => {
     selectedIds.clear();
     updateSelectionUI();
+    renderWorkshops();
   });
+
+  if (btnSelectVisible) {
+    btnSelectVisible.addEventListener('click', () => {
+      getFilteredWorkshops().forEach(w => selectedIds.add(w.id));
+      updateSelectionUI();
+      renderWorkshops();
+    });
+  }
 
   thCheckbox.addEventListener('change', (e) => {
     const visible = getFilteredWorkshops();
@@ -64,20 +145,58 @@ function bindEvents() {
       visible.forEach(w => selectedIds.delete(w.id));
     }
     updateSelectionUI();
+    renderWorkshops();
   });
 
+  formatSelect.addEventListener('change', updateSelectionUI);
   btnStartCrawl.addEventListener('click', startCrawl);
   btnStopCrawl.addEventListener('click', stopCrawl);
 
-  btnScan.addEventListener('click', () => {
-    if (confirm('Quét lại toàn bộ catalog từ cloudjourney.awsstudygroup.com?')) {
-      fetch('/api/scan', { method: 'POST' });
+  // Scan Catalog
+  btnScan.addEventListener('click', async () => {
+    if (confirm('Quét lại toàn bộ catalog từ cloudjourney.awsstudygroup.com? Thao tác này mất ~5 giây.')) {
+      const icon = btnScan.querySelector('.icon');
+      if (icon) icon.classList.add('spinning');
+      if (btnScanText) btnScanText.textContent = 'Đang quét...';
+      btnScan.disabled = true;
+
+      try {
+        await fetch('/api/scan', { method: 'POST' });
+        appendLog('[QUÉT] Đã gửi yêu cầu quét catalog mới...');
+      } catch (e) {
+        appendLog(`[LỖI] Quét catalog thất bại: ${e}`, 'ERROR');
+      } finally {
+        setTimeout(() => {
+          if (icon) icon.classList.remove('spinning');
+          if (btnScanText) btnScanText.textContent = 'Quét Catalog';
+          btnScan.disabled = false;
+        }, 1500);
+      }
     }
+  });
+
+  // Terminal Controls
+  btnToggleTerminal.addEventListener('click', () => {
+    const isCollapsed = terminalWrapper.classList.toggle('collapsed');
+    btnToggleTerminal.classList.toggle('collapsed', isCollapsed);
+    terminalToggleText.textContent = isCollapsed ? 'Mở rộng Log' : 'Thu gọn Log';
   });
 
   btnClearLogs.addEventListener('click', () => {
     terminalScreen.textContent = '';
   });
+
+  if (btnCopyLogs) {
+    btnCopyLogs.addEventListener('click', () => {
+      navigator.clipboard.writeText(terminalScreen.textContent).then(() => {
+        const orig = btnCopyLogs.textContent;
+        btnCopyLogs.textContent = 'Đã chép!';
+        setTimeout(() => { btnCopyLogs.textContent = orig; }, 1500);
+      }).catch(err => {
+        console.error('Không thể sao chép log:', err);
+      });
+    });
+  }
 
   btnRefreshDownloads.addEventListener('click', loadDownloads);
 }
@@ -91,11 +210,23 @@ async function loadCatalog() {
     categories = data.categories || [];
     statTotalWs.textContent = allWorkshops.length;
 
+    updateFilterCounts();
     renderCategoryPills();
     renderWorkshops();
   } catch (err) {
     appendLog(`[LỖI] Không thể tải catalog: ${err}`, 'ERROR');
   }
+}
+
+function updateFilterCounts() {
+  const total = allWorkshops.length;
+  const done = completedPdfs.size;
+  const pending = Math.max(0, total - done);
+
+  if (countFilterAll) countFilterAll.textContent = total;
+  if (countFilterPending) countFilterPending.textContent = pending;
+  if (countFilterDone) countFilterDone.textContent = done;
+  if (statCompletedPdf) statCompletedPdf.textContent = done;
 }
 
 // Category Pills
@@ -130,13 +261,23 @@ function selectCategory(cat) {
 
 function getFilteredWorkshops() {
   const query = searchInput.value.trim().toLowerCase();
-  return allWorkshops.filter(w => {
-    const matchCat = currentCategory === 'all' || w.category === currentCategory;
+  return allWorkshops.filter(ws => {
+    const matchCat = currentCategory === 'all' || ws.category === currentCategory;
     const matchSearch = !query || 
-      w.id.toLowerCase().includes(query) || 
-      w.title.toLowerCase().includes(query) || 
-      (w.subcategory && w.subcategory.toLowerCase().includes(query));
-    return matchCat && matchSearch;
+      ws.id.toLowerCase().includes(query) || 
+      ws.title.toLowerCase().includes(query) || 
+      (ws.subcategory && ws.subcategory.toLowerCase().includes(query));
+    
+    // Status Filter
+    const hasFile = completedPdfs.has(ws.id);
+    let matchStatus = true;
+    if (currentStatusFilter === 'pending') {
+      matchStatus = !hasFile;
+    } else if (currentStatusFilter === 'done') {
+      matchStatus = hasFile;
+    }
+
+    return matchCat && matchSearch && matchStatus;
   });
 }
 
@@ -147,14 +288,15 @@ function renderWorkshops() {
   tbody.innerHTML = '';
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 30px; color: var(--text-muted);">Không tìm thấy workshop nào phù hợp.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 36px 12px; color: var(--text-muted);">Không tìm thấy workshop nào phù hợp với bộ lọc hiện tại.</td></tr>`;
+    updateSelectionUI();
     return;
   }
 
   filtered.forEach(ws => {
     const tr = document.createElement('tr');
     const isSelected = selectedIds.has(ws.id);
-    const hasPdf = completedPdfs.has(ws.id);
+    const completedInfo = completedPdfs.get(ws.id);
 
     tr.innerHTML = `
       <td>
@@ -172,15 +314,29 @@ function renderWorkshops() {
         ${ws.subcategory ? `<br><small style="color: var(--text-muted); font-size: 0.72rem;">${escapeHtml(ws.subcategory)}</small>` : ''}
       </td>
       <td>
-        ${hasPdf 
-          ? `<span class="badge-status done">✓ Đã có PDF</span>` 
+        ${completedInfo 
+          ? `<span class="badge-status done">✓ Đã có file</span>` 
           : `<span class="badge-status not-started">Chưa cào</span>`
         }
       </td>
       <td style="text-align: right;">
-        <button class="btn btn-outline btn-sm btn-crawl-single" data-id="${ws.id}">
-          Cào bài này
-        </button>
+        <div class="row-actions-group">
+          ${completedInfo ? `
+            <a href="/preview/${completedInfo.relative_path}" target="_blank" class="btn btn-outline btn-sm" title="Xem trước tài liệu">
+              Xem
+            </a>
+            <a href="/download/${completedInfo.relative_path}" class="btn btn-primary btn-sm" title="Tải file về máy">
+              Tải
+            </a>
+            <button class="btn btn-outline btn-sm btn-crawl-single" data-id="${ws.id}" title="Cào cập nhật lại nội dung mới nhất">
+              🔄
+            </button>
+          ` : `
+            <button class="btn btn-primary btn-sm btn-crawl-single" data-id="${ws.id}" title="Bắt đầu xuất bản bài này">
+              Cào bài này
+            </button>
+          `}
+        </div>
       </td>
     `;
 
@@ -204,10 +360,21 @@ function renderWorkshops() {
 }
 
 function updateSelectionUI() {
-  selectedCountSpan.textContent = selectedIds.size;
+  const count = selectedIds.size;
+  selectedCountSpan.textContent = count;
   const visible = getFilteredWorkshops();
   const allVisibleSelected = visible.length > 0 && visible.every(w => selectedIds.has(w.id));
   thCheckbox.checked = allVisibleSelected;
+
+  // Dynamic Button Label
+  const format = formatSelect ? formatSelect.value : 'both';
+  let formatText = 'xuất bản';
+  if (format === 'md') formatText = 'xuất Markdown';
+  else if (format === 'pdf') formatText = 'xuất PDF';
+
+  if (btnStartCrawlLabel) {
+    btnStartCrawlLabel.innerHTML = `Bắt đầu ${formatText} (<span id="selected-count">${count}</span>)`;
+  }
 
   btnStartCrawl.disabled = isRunning;
   btnStartCrawl.style.opacity = isRunning ? '0.6' : '1';
@@ -216,9 +383,12 @@ function updateSelectionUI() {
 // Start Crawl
 async function startCrawl() {
   if (selectedIds.size === 0) {
-    if (!confirm('Bạn chưa chọn workshop nào. Bạn có muốn cào TOÀN BỘ 127+ workshop không?')) {
-      return;
-    }
+    const proceed = confirm(
+      '⚠️ Bạn chưa chọn workshop cụ thể nào.\n\n' +
+      'Bạn có muốn cào TOÀN BỘ 127+ workshop không?\n' +
+      '(Lưu ý: Quá trình cào PDF toàn bộ sẽ tốn thời gian và tài nguyên CPU máy chủ).'
+    );
+    if (!proceed) return;
   }
 
   const ids = Array.from(selectedIds);
@@ -227,7 +397,7 @@ async function startCrawl() {
 
 async function startCrawlWithIds(ids) {
   const lang = langSelect.value;
-  const format = document.getElementById('select-format').value;
+  const format = formatSelect.value;
   setRunningState(true);
 
   try {
@@ -271,34 +441,53 @@ async function loadDownloads() {
   try {
     const res = await fetch('/api/downloads');
     const data = await res.json();
-    const files = data.files || [];
+    allDownloadedFiles = data.files || [];
 
     completedPdfs.clear();
-    files.forEach(f => completedPdfs.set(f.id, f));
-    statCompletedPdf.textContent = completedPdfs.size;
-    downloadCountSpan.textContent = files.length;
+    allDownloadedFiles.forEach(f => completedPdfs.set(f.id, f));
 
-    renderDownloads(files);
-    renderWorkshops(); // re-render to update badges
+    // Update download counts
+    const total = allDownloadedFiles.length;
+    const pdfCount = allDownloadedFiles.filter(f => f.filename.endsWith('.pdf')).length;
+    const mdCount = allDownloadedFiles.filter(f => f.filename.endsWith('.md')).length;
+
+    if (downloadCountSpan) downloadCountSpan.textContent = total;
+    if (dlCountAll) dlCountAll.textContent = total;
+    if (dlCountPdf) dlCountPdf.textContent = pdfCount;
+    if (dlCountMd) dlCountMd.textContent = mdCount;
+
+    updateFilterCounts();
+    renderDownloads();
+    renderWorkshops(); // re-render to update badges & table action buttons
   } catch (err) {
-    console.error(err);
+    console.error('Lỗi khi tải downloads:', err);
   }
 }
 
-function renderDownloads(files) {
+function renderDownloads() {
+  let files = allDownloadedFiles;
+  if (currentDlFilter === 'pdf') {
+    files = files.filter(f => f.filename.endsWith('.pdf'));
+  } else if (currentDlFilter === 'md') {
+    files = files.filter(f => f.filename.endsWith('.md'));
+  }
+
   if (files.length === 0) {
-    downloadsList.innerHTML = `<div class="empty-state">Chưa có file PDF nào được xuất. Hãy chọn workshop và bắt đầu cào!</div>`;
+    downloadsList.innerHTML = `<div class="empty-state">Chưa có tài liệu nào trong bộ lọc này. Hãy chọn workshop và bắt đầu cào!</div>`;
     return;
   }
 
   downloadsList.innerHTML = '';
   files.forEach(file => {
+    const isMd = file.filename.endsWith('.md');
     const item = document.createElement('div');
     item.className = 'download-item';
     item.innerHTML = `
       <div class="dl-info">
-        <div class="dl-name" title="${escapeHtml(file.filename)}">
-          <span class="id-badge">${file.id}</span> ${escapeHtml(file.filename)}
+        <div class="dl-name-row">
+          <span class="badge-file-type ${isMd ? 'md' : 'pdf'}">${isMd ? 'MD' : 'PDF'}</span>
+          <span class="id-badge">${file.id}</span>
+          <span class="dl-name" title="${escapeHtml(file.filename)}">${escapeHtml(file.filename)}</span>
         </div>
         <div class="dl-meta">
           Dung lượng: <strong>${file.size_mb} MB</strong> • Cập nhật: ${file.updated_at}
@@ -309,7 +498,7 @@ function renderDownloads(files) {
           Xem
         </a>
         <a href="/download/${file.relative_path}" class="btn btn-primary btn-sm" title="Tải file về máy">
-          Tải ${file.filename.endsWith('.md') ? 'MD' : 'PDF'}
+          Tải
         </a>
       </div>
     `;
@@ -359,7 +548,7 @@ function connectSSE() {
         statusText.textContent = 'Hoàn tất quá trình cào!';
         progressPercent.textContent = '100%';
         progressFill.style.width = '100%';
-        progressSubtext.textContent = 'Tất cả file PDF đã được tạo thành công trong thư mục output_fcaj.';
+        progressSubtext.textContent = 'Tất cả file tài liệu đã được tạo thành công trong thư mục output_fcaj.';
         loadDownloads();
       }
     } catch (e) {

@@ -184,21 +184,25 @@ Ví dụ:
 
 ---
 
-## ☁️ Quản Lý Máy Chủ AWS EC2 (Tiết Kiệm Credit)
+## ☁️ Quản Lý Máy Chủ AWS EC2 & Kiểm Soát Ngân Sách ($20 / 3 Tháng)
 
 Máy chủ được khởi tạo trên **AWS EC2 (`t3.small`)** tại Region `us-east-1`:
 - **Web App Trực Tuyến**: [http://44.203.216.21/](http://44.203.216.21/)
-- **Cơ chế tự động**: Máy chủ có **CloudWatch Auto-Stop** tự tắt khi CPU < 2% trong 1 tiếng sau khi cào xong để bảo vệ $200 credit.
+- **Hạn mức khống chế**: **$20.00 cho 3 tháng** (~$6.67/tháng) qua AWS Budget `FCAJ-Crawler-Monthly-6.67USD`.
+- **Cơ chế Auto-Stop**: Đã cài đặt **CloudWatch Auto-Stop** (`fcaj-crawler-auto-stop`) tự động **STOP máy sau 15 phút idle (< 2% CPU)** nếu bạn không chạy tác vụ crawl nào.
 
 Bạn có thể quản lý máy chủ từ xa trực tiếp bằng CLI:
 ```bash
-# Kiểm tra trạng thái máy chủ & lấy IP mới nhất
+# Xem trạng thái máy chủ & link web trực tiếp
 python deploy/manage_ec2.py status
+
+# Kiểm tra ngân sách $20/3 tháng và chi tiêu thực tế trên AWS
+python deploy/manage_ec2.py budget
 
 # Bật máy chủ khi cần cào tài liệu
 python deploy/manage_ec2.py start
 
-# Tắt máy chủ khi đã hoàn thành để không tính phí CPU/RAM
+# Tắt máy chủ khi hoàn thành để NGỪNG tính phí CPU/RAM (chỉ tốn ~$2.4/tháng tiền ổ cứng)
 python deploy/manage_ec2.py stop
 
 # Khởi động lại máy chủ
