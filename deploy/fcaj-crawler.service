@@ -1,0 +1,17 @@
+[Unit]
+Description=FCAJ Crawler & Web Studio Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/fcaj-crawler
+Environment="PATH=/opt/fcaj-crawler/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/opt/fcaj-crawler"
+Environment="PYTHONUNBUFFERED=1"
+ExecStart=/opt/fcaj-crawler/.venv/bin/python run_web.py --port 5000 --host 0.0.0.0 --no-browser
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
