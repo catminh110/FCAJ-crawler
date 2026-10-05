@@ -26,6 +26,7 @@ class CrawlManager:
         self.current_task_info = {}
         self.logs: List[str] = []
         self._lock = threading.Lock()
+        self.log_listener: Optional[Callable[[str], None]] = None
 
     def log(self, message: str, level: str = "INFO"):
         timestamp = datetime.datetime.now().strftime("%H:%M:%S")
@@ -35,6 +36,11 @@ class CrawlManager:
             # Keep max 500 log messages in memory
             if len(self.logs) > 500:
                 self.logs.pop(0)
+        if self.log_listener:
+            try:
+                self.log_listener(formatted)
+            except Exception:
+                pass
         if level == "ERROR":
             logger.error(message)
         elif level == "WARNING":

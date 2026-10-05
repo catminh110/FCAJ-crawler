@@ -10,7 +10,7 @@ from urllib.parse import unquote, urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup
 
-from fcaj_crawler.config import DEFAULT_CONCURRENCY, DEFAULT_HEADERS, REQUEST_TIMEOUT
+from fcaj_crawler.config import DEFAULT_CONCURRENCY, REQUEST_TIMEOUT, make_session
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +23,7 @@ class WorkshopCrawler:
         self.ws_id = workshop_info["id"]
         self.base_url = workshop_info["url"].rstrip("/")
         self.lang = lang.lower()
-        self.session = requests.Session()
-        self.session.headers.update(DEFAULT_HEADERS)
+        self.session = make_session(pool_size=DEFAULT_CONCURRENCY * 2)
         
         # Directory setup
         base_output = output_dir or Path("output_fcaj")

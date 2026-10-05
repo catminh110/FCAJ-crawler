@@ -36,15 +36,16 @@ event_listeners = []
 
 def broadcast_event(data: dict):
     msg = f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
-    dead = []
-    for q in event_listeners:
+    for q in list(event_listeners):
         try:
             q.put_nowait(msg)
-        except Exception:
-            dead.append(q)
-    for q in dead:
-        if q in event_listeners:
-            event_listeners.remove(q)
+        except queue.Full:
+            # Slow client: drop this message, keep the connection alive
+            pass
+
+
+# Stream every crawler log line to connected dashboards
+manager.log_listener = lambda line: broadcast_event({"type": "log", "message": line})
 
 
 @app.route("/")
@@ -106,7 +107,8 @@ def start_crawl():
         broadcast_event({"type": "crawl_finished"})
 
     threading.Thread(target=runner_worker, daemon=True).start()
-    return jsonify({"status": "started", "message": "Đã bắt đầu thu thập dữ liệu và xuất PDF!"})
+    labels = {"md": "Markdown", "pdf": "PDF", "both": "Markdown + PDF"}
+    return jsonify({"status": "started", "message": f"Đã bắt đầu thu thập dữ liệu ({labels[output_format]})!"})
 
 
 @app.route("/api/stop", methods=["POST"])
@@ -167,7 +169,7 @@ def preview_pdf(filepath):
     if not target.exists():
         return "File không tồn tại", 404
     if target.suffix == ".md":
-        return send_file(target, mimetype="text/markdown; charset=utf-8")
+        return send_file(target, mimetype="text/markdown")
     return send_file(target, mimetype="application/pdf")
 
 
@@ -175,20 +177,27 @@ def preview_pdf(filepath):
 def sse_stream():
     """Server-Sent Events endpoint for real-time live terminal streaming."""
     def event_generator():
-        client_q = queue.Queue(maxsize=100)
+        client_q = queue.Queue(maxsize=1000)
         event_listeners.append(client_q)
         try:
             # Send initial state
-            initial = json.dumps({"type": "init", "state": manager.get_state()})
+            initial = json.dumps({"type": "init", "state": manager.get_state()}, ensure_ascii=False)
             yield f"data: {initial}\n\n"
             while True:
-                msg = client_q.get()
-                yield msg
-        except GeneratorExit:
+                try:
+                    yield client_q.get(timeout=15)
+                except queue.Empty:
+                    # SSE comment line: keeps proxies happy and detects closed tabs
+                    yield ": keep-alive\n\n"
+        finally:
             if client_q in event_listeners:
                 event_listeners.remove(client_q)
 
-    return Response(event_generator(), mimetype="text/event-stream")
+    return Response(
+        event_generator(),
+        mimetype="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 def create_app():

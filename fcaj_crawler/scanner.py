@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 from fcaj_crawler.config import (
     CATALOG_CACHE_FILE,
     DEFAULT_HEADERS,
+    make_session,
     MAIN_HUB_URL,
     REQUEST_TIMEOUT,
 )
@@ -22,8 +23,7 @@ class CatalogScanner:
 
     def __init__(self, force_refresh: bool = False):
         self.force_refresh = force_refresh
-        self.session = requests.Session()
-        self.session.headers.update(DEFAULT_HEADERS)
+        self.session = make_session()
 
     def scan(self, progress_callback=None) -> Dict:
         """
