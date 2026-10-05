@@ -2,6 +2,9 @@
 
 Phần mềm tự động thu thập (cào) toàn bộ dữ liệu từ cổng **Cloud Journey (AWS Study Group)** tại [https://cloudjourney.awsstudygroup.com](https://cloudjourney.awsstudygroup.com) và **toàn bộ 127+ trang web con / workshop** (như `000001.awsstudygroup.com`, `000002.awsstudygroup.com`,...), tải toàn bộ ảnh hướng dẫn và xuất ra **Markdown** (dễ đọc, dễ tìm kiếm, dễ đưa vào Obsidian/Notion/GitHub) và/hoặc **PDF chuẩn sách A4** có trang bìa, mục lục và đánh số trang.
 
+> 🌐 **Link Web Live trên AWS Cloud**: **[http://44.203.216.21/](http://44.203.216.21/)**  
+> *(Hệ thống được triển khai trên máy chủ AWS EC2 `t3.small` với cơ chế bảo vệ ngân sách $200 credit và tự động dừng khi nhàn rỗi)*
+
 ---
 
 ## 🌟 Tính Năng Nổi Bật
@@ -178,3 +181,26 @@ Tất cả các file PDF được xuất vào thư mục:
 
 Ví dụ:
 - `output_fcaj/workshops/000001_Creating_Your_First_AWS_Account/000001_Creating_Your_First_AWS_Account_VI.pdf` (khoảng 15 MB, chứa trọn vẹn 13 chương và 98 ảnh hướng dẫn chất lượng cao).
+
+---
+
+## ☁️ Quản Lý Máy Chủ AWS EC2 (Tiết Kiệm Credit)
+
+Máy chủ được khởi tạo trên **AWS EC2 (`t3.small`)** tại Region `us-east-1`:
+- **Web App Trực Tuyến**: [http://44.203.216.21/](http://44.203.216.21/)
+- **Cơ chế tự động**: Máy chủ có **CloudWatch Auto-Stop** tự tắt khi CPU < 2% trong 1 tiếng sau khi cào xong để bảo vệ $200 credit.
+
+Bạn có thể quản lý máy chủ từ xa trực tiếp bằng CLI:
+```bash
+# Kiểm tra trạng thái máy chủ & lấy IP mới nhất
+python deploy/manage_ec2.py status
+
+# Bật máy chủ khi cần cào tài liệu
+python deploy/manage_ec2.py start
+
+# Tắt máy chủ khi đã hoàn thành để không tính phí CPU/RAM
+python deploy/manage_ec2.py stop
+
+# Khởi động lại máy chủ
+python deploy/manage_ec2.py reboot
+```

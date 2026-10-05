@@ -1,0 +1,11 @@
+{
+  "instance_id": "i-0fd451babd62be4f3",
+  "instance_type": "t3.small",
+  "public_ip": "44.203.216.21",
+  "public_dns": "ec2-44-203-216-21.compute-1.amazonaws.com",
+  "security_group_id": "sg-023256b7ba77056da",
+  "region": "us-east-1",
+  "state": "running",
+  "created_at": "2026-10-05T15:26:03+07:00",
+  "web_url": "http://44.203.216.21/"
+}
