@@ -30,7 +30,7 @@ ENV/
 env/
 
 # Crawler outputs (large PDFs, HTML, downloaded screenshots)
-output_fcaj/workshops/
+output_fcaj/*
 !output_fcaj/.gitkeep
 
 # State & runtime logs
