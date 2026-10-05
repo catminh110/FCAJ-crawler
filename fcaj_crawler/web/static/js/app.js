@@ -227,13 +227,14 @@ async function startCrawl() {
 
 async function startCrawlWithIds(ids) {
   const lang = langSelect.value;
+  const format = document.getElementById('select-format').value;
   setRunningState(true);
 
   try {
     const res = await fetch('/api/crawl', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: ids.length > 0 ? ids : null, lang: lang })
+      body: JSON.stringify({ ids: ids.length > 0 ? ids : null, lang: lang, format: format })
     });
     const data = await res.json();
     if (data.status === 'started') {
@@ -307,8 +308,8 @@ function renderDownloads(files) {
         <a href="/preview/${file.relative_path}" target="_blank" class="btn btn-outline btn-sm" title="Xem trực tiếp trên trình duyệt">
           Xem
         </a>
-        <a href="/download/${file.relative_path}" class="btn btn-primary btn-sm" title="Tải file PDF về máy">
-          Tải PDF
+        <a href="/download/${file.relative_path}" class="btn btn-primary btn-sm" title="Tải file về máy">
+          Tải ${file.filename.endsWith('.md') ? 'MD' : 'PDF'}
         </a>
       </div>
     `;

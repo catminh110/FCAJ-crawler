@@ -1,6 +1,6 @@
 # 🚀 FCAJ Crawler & PDF Studio
 
-Phần mềm tự động thu thập (cào) toàn bộ dữ liệu từ cổng **Cloud Journey (AWS Study Group)** tại [https://cloudjourney.awsstudygroup.com](https://cloudjourney.awsstudygroup.com) và **toàn bộ 127+ trang web con / workshop** (như `000001.awsstudygroup.com`, `000002.awsstudygroup.com`,...), tải toàn bộ ảnh hướng dẫn và biên soạn xuất thành từng tập **file PDF chuẩn sách hướng dẫn A4** có trang bìa, mục lục và đánh số trang.
+Phần mềm tự động thu thập (cào) toàn bộ dữ liệu từ cổng **Cloud Journey (AWS Study Group)** tại [https://cloudjourney.awsstudygroup.com](https://cloudjourney.awsstudygroup.com) và **toàn bộ 127+ trang web con / workshop** (như `000001.awsstudygroup.com`, `000002.awsstudygroup.com`,...), tải toàn bộ ảnh hướng dẫn và xuất ra **Markdown** (dễ đọc, dễ tìm kiếm, dễ đưa vào Obsidian/Notion/GitHub) và/hoặc **PDF chuẩn sách A4** có trang bìa, mục lục và đánh số trang.
 
 ---
 
@@ -135,6 +135,39 @@ python run_crawler.py crawl --all --lang vi
 ```
 
 *Mẹo*: Để cào cả tiếng Anh và tiếng Việt, thêm cờ `--lang both`.
+
+#### 7. Chọn định dạng xuất (`--format`)
+```bash
+python run_crawler.py crawl --all --lang vi --format md     # chỉ Markdown (nhanh nhất)
+python run_crawler.py crawl --all --lang vi --format pdf    # chỉ PDF
+python run_crawler.py crawl --all --lang vi --format both   # cả hai (mặc định)
+```
+
+---
+
+## 📝 Dữ Liệu Markdown
+
+Mỗi workshop được lưu trong `output_fcaj/workshops/<ID>_<Tên>/`:
+
+```
+000004_Compute_Essentials_with_Amazon_Elastic_Compute_Cloud_(EC2)/
+├── README.md                        # Thông tin + mục lục (có phân cấp chương cha/con)
+├── 000004_..._VI.md                 # Toàn bộ workshop gộp trong 1 file
+├── chapters_vi/                     # Mỗi chương 1 file, có nút ← Bài trước / Bài tiếp →
+│   ├── 00-gioi-thieu-ve-amazon-ec2.md
+│   ├── 01-gioi-thieu.md
+│   └── ...
+├── images/                          # Ảnh dùng chung (link tương đối, xem offline được)
+├── metadata_vi.json                 # Danh sách chương, URL gốc, thời gian cào
+└── 000004_..._VI.pdf                # (nếu xuất PDF)
+```
+
+Mục lục tổng của mọi workshop đã cào: **`output_fcaj/INDEX.md`** (tự cập nhật sau mỗi lần chạy).
+
+Xử lý khi chuyển sang Markdown:
+- Khối code giữ ngôn ngữ (` ```bash `, ` ```json `...).
+- Hộp ghi chú của Hugo (info/note/tip/warning) → blockquote có nhãn.
+- Bỏ trang rác `Tags` / `Categories`; trang chỉ có trong sitemap được chèn đúng sau chương cha.
 
 ---
 

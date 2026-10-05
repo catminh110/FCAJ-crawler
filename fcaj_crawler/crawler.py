@@ -93,27 +93,50 @@ class WorkshopCrawler:
 
         # Strategy 2: Check sitemap.xml to verify no subpages were missed
         sitemap_urls = self._fetch_sitemap_urls()
-        order_counter = len(chapters) + 1
-        for sm_url in sitemap_urls:
-            # Normalize url
+        extras = []
+        for sm_url in sorted(set(sitemap_urls)):
             norm_url = sm_url.rstrip("/") + "/"
-            if norm_url not in seen_urls and sm_url not in seen_urls:
-                # Filter by language if specified
-                if self.lang == "vi" and "/vi/" not in sm_url and len(chapters) > 1:
-                    continue
-                if self.lang == "en" and "/vi/" in sm_url:
-                    continue
-                chapters.append({
-                    "title": self._url_to_title(sm_url),
-                    "url": sm_url,
-                    "order": order_counter,
-                    "level": 1
-                })
-                seen_urls.add(sm_url)
-                order_counter += 1
+            if norm_url in seen_urls or sm_url in seen_urls:
+                continue
+            if self.lang == "vi" and "/vi/" not in sm_url:
+                continue
+            if self.lang == "en" and "/vi/" in sm_url:
+                continue
+            extras.append(sm_url)
+            seen_urls.add(norm_url)
+
+        # Insert each extra page right after the last chapter that is its URL-prefix parent
+        for sm_url in extras:
+            norm_url = sm_url.rstrip("/") + "/"
+            insert_at = len(chapters)
+            parent_level = 0
+            for i, ch in enumerate(chapters):
+                ch_norm = ch["url"].rstrip("/") + "/"
+                if norm_url.startswith(ch_norm) and ch_norm != norm_url:
+                    # place after parent and after all its existing descendants
+                    j = i + 1
+                    while j < len(chapters) and (chapters[j]["url"].rstrip("/") + "/").startswith(ch_norm):
+                        j += 1
+                    insert_at = j
+                    parent_level = ch.get("level", 0)
+            chapters.insert(insert_at, {
+                "title": self._url_to_title(sm_url),
+                "url": sm_url,
+                "level": parent_level + 1,
+            })
+
+        # Drop Hugo taxonomy pages (tags / categories) - they are not lesson content
+        chapters = [c for c in chapters if not self._is_taxonomy_url(c["url"])]
+        for idx, ch in enumerate(chapters):
+            ch["order"] = idx
 
         logger.info("[%s] Total chapters discovered: %d", self.ws_id, len(chapters))
         return chapters
+
+    @staticmethod
+    def _is_taxonomy_url(url: str) -> bool:
+        path = urlparse(url).path.lower()
+        return bool(re.search(r"/(tags|categories)(/|$)", path))
 
     def _parse_sidebar_topics(self, parent_elem, base_url: str, chapters: List[Dict], seen_urls: set, level: int):
         """Recursively parses sidebar navigation elements."""

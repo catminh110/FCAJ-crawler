@@ -7,6 +7,7 @@ from typing import Callable, Dict, List, Optional
 
 from fcaj_crawler.config import DATA_DIR, OUTPUT_DIR, STATE_FILE
 from fcaj_crawler.crawler import WorkshopCrawler
+from fcaj_crawler.markdown_exporter import MarkdownExporter, build_global_index
 from fcaj_crawler.pdf_generator import PDFGenerator
 from fcaj_crawler.processor import WorkshopProcessor
 from fcaj_crawler.scanner import CatalogScanner
@@ -109,6 +110,7 @@ class CrawlManager:
         keyword: Optional[str] = None,
         languages: Optional[List[str]] = None,
         force_refresh_catalog: bool = False,
+        output_format: str = "both",
         progress_callback: Optional[Callable[[Dict], None]] = None
     ) -> Dict:
         """
@@ -193,44 +195,62 @@ class CrawlManager:
                             self.log(f"[{ws_id}] Không tìm thấy nội dung cho ngôn ngữ {lang}!", "WARNING")
                             continue
 
-                        # 2. Process to Book HTML
-                        self.log(f"[{ws_id}] Đang biên soạn sách HTML tổng hợp...")
-                        self.current_task_info["progress"] = 70
-                        self.current_task_info["step"] = "Đang biên soạn sách HTML..."
-                        if progress_callback:
-                            progress_callback(self.current_task_info)
-
-                        processor = WorkshopProcessor(ws, chapters, lang=lang, output_dir=self.output_dir)
-                        book_html_path = processor.generate_book_html()
-
-                        # 3. Generate PDF
+                        produced = []
                         clean_title = crawler._sanitize_filename(ws_title)
-                        pdf_filename = f"{ws_id}_{clean_title}_{lang.upper()}.pdf"
-                        pdf_path = crawler.workshop_dir / pdf_filename
 
-                        self.log(f"[{ws_id}] Đang xuất PDF: {pdf_filename}...")
-                        self.current_task_info["progress"] = 85
-                        self.current_task_info["step"] = "Đang kết xuất PDF bằng Playwright..."
-                        if progress_callback:
-                            progress_callback(self.current_task_info)
+                        # 2. Markdown export
+                        if output_format in ("md", "both"):
+                            self.log(f"[{ws_id}] Đang xuất Markdown...")
+                            self.current_task_info["progress"] = 65
+                            self.current_task_info["step"] = "Đang xuất Markdown..."
+                            if progress_callback:
+                                progress_callback(self.current_task_info)
+                            md_path = MarkdownExporter(ws, chapters, crawler.workshop_dir, lang=lang).export()
+                            self.log(f"✅ Markdown: {md_path.name}")
+                            produced.append(str(md_path))
 
-                        pdf_success = self.pdf_generator.convert_html_to_pdf(
-                            book_html_path,
-                            pdf_path,
-                            title=f"Workshop #{ws_id}: {ws_title}"
-                        )
+                        # 3. Book HTML + PDF
+                        if output_format in ("pdf", "both"):
+                            self.log(f"[{ws_id}] Đang biên soạn sách HTML tổng hợp...")
+                            self.current_task_info["progress"] = 75
+                            self.current_task_info["step"] = "Đang biên soạn sách HTML..."
+                            if progress_callback:
+                                progress_callback(self.current_task_info)
 
-                        if pdf_success:
-                            self.log(f"✅ Hoàn tất xuất PDF: {pdf_path.name} ({pdf_path.stat().st_size // 1024} KB)")
-                            self._save_completed_workshop(ws_id, ws_title, lang, str(pdf_path))
+                            processor = WorkshopProcessor(ws, chapters, lang=lang, output_dir=self.output_dir)
+                            book_html_path = processor.generate_book_html()
+
+                            pdf_filename = f"{ws_id}_{clean_title}_{lang.upper()}.pdf"
+                            pdf_path = crawler.workshop_dir / pdf_filename
+                            self.log(f"[{ws_id}] Đang xuất PDF: {pdf_filename}...")
+                            self.current_task_info["progress"] = 85
+                            self.current_task_info["step"] = "Đang kết xuất PDF bằng Playwright..."
+                            if progress_callback:
+                                progress_callback(self.current_task_info)
+
+                            if self.pdf_generator.convert_html_to_pdf(
+                                book_html_path, pdf_path, title=f"Workshop #{ws_id}: {ws_title}"
+                            ):
+                                self.log(f"✅ PDF: {pdf_path.name} ({pdf_path.stat().st_size // 1024} KB)")
+                                produced.append(str(pdf_path))
+                            else:
+                                self.log(f"❌ Thất bại khi tạo file PDF cho workshop {ws_id}", "ERROR")
+
+                        if produced:
+                            self._save_completed_workshop(ws_id, ws_title, lang, ";".join(produced))
                             success_count += 1
                         else:
-                            self.log(f"❌ Thất bại khi tạo file PDF cho workshop {ws_id}", "ERROR")
                             fail_count += 1
 
                     except Exception as ex:
                         self.log(f"❌ Lỗi khi xử lý workshop {ws_id} ({lang}): {ex}", "ERROR")
                         fail_count += 1
+
+            try:
+                idx_path = build_global_index(self.output_dir)
+                self.log(f"📚 Đã cập nhật mục lục tổng: {idx_path}")
+            except Exception as ex:
+                self.log(f"Không tạo được INDEX.md: {ex}", "WARNING")
 
             self.current_task_info = {
                 "step": "Hoàn tất toàn bộ!",

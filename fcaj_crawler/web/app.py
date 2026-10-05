@@ -85,6 +85,9 @@ def start_crawl():
     category = data.get("category")
     keyword = data.get("keyword")
     lang = data.get("lang", "vi")
+    output_format = data.get("format", "both")
+    if output_format not in ("md", "pdf", "both"):
+        output_format = "both"
 
     langs = ["vi", "en"] if lang == "both" else [lang]
 
@@ -97,6 +100,7 @@ def start_crawl():
             category_slug=category,
             keyword=keyword,
             languages=langs,
+            output_format=output_format,
             progress_callback=on_progress
         )
         broadcast_event({"type": "crawl_finished"})
@@ -122,7 +126,12 @@ def list_downloads():
     workshops_dir = OUTPUT_DIR / "workshops"
     pdfs = []
     if workshops_dir.exists():
-        for pdf_file in workshops_dir.glob("*/*.pdf"):
+        candidates = list(workshops_dir.glob("*/*.pdf"))
+        for d in workshops_dir.iterdir():
+            if d.is_dir():
+                ws_prefix = d.name.split("_")[0]
+                candidates += list(d.glob(f"{ws_prefix}_*.md"))
+        for pdf_file in candidates:
             rel_path = pdf_file.relative_to(OUTPUT_DIR)
             folder_name = pdf_file.parent.name
             ws_id = folder_name.split("_")[0]
@@ -157,6 +166,8 @@ def preview_pdf(filepath):
         return "Truy cập bị từ chối", 403
     if not target.exists():
         return "File không tồn tại", 404
+    if target.suffix == ".md":
+        return send_file(target, mimetype="text/markdown; charset=utf-8")
     return send_file(target, mimetype="application/pdf")
 
 

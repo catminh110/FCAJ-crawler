@@ -73,14 +73,15 @@ def cmd_crawl(args):
         workshop_ids = [x.strip() for x in args.id.split(",") if x.strip()]
 
     print(f"🚀 Bắt đầu quá trình cào và xuất PDF vào thư mục: {output_path.resolve()}")
-    print(f"🌐 Ngôn ngữ: {', '.join(langs).upper()}")
+    print(f"🌐 Ngôn ngữ: {', '.join(langs).upper()}  |  📄 Định dạng: {args.format.upper()}")
 
     res = manager.run_workshops(
         workshop_ids=workshop_ids,
         category_slug=args.category,
         keyword=args.search,
         languages=langs,
-        force_refresh_catalog=args.refresh
+        force_refresh_catalog=args.refresh,
+        output_format=args.format,
     )
 
     print("\n" + "="*50)
@@ -111,6 +112,7 @@ def main():
     crawl_p.add_argument("--category", type=str, help="Cào theo tên/slug danh mục (ví dụ: 1-explore, migrate)")
     crawl_p.add_argument("--search", type=str, help="Tìm theo từ khóa (ví dụ: ec2, dynamodb, s3)")
     crawl_p.add_argument("--lang", choices=["vi", "en", "both"], default="vi", help="Ngôn ngữ bài viết (mặc định: vi)")
+    crawl_p.add_argument("--format", choices=["md", "pdf", "both"], default="both", help="Định dạng xuất (mặc định: both = Markdown + PDF)")
     crawl_p.add_argument("--output", type=str, help="Thư mục xuất kết quả")
     crawl_p.add_argument("--refresh", action="store_true", help="Làm mới cache danh sách")
 
