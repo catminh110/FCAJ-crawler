@@ -2,17 +2,25 @@ import hashlib
 import logging
 import os
 import re
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 from urllib.parse import unquote, urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
 
-from fcaj_crawler.config import DEFAULT_CONCURRENCY, REQUEST_TIMEOUT, make_session
+from fcaj_crawler.config import (
+    DEFAULT_CONCURRENCY,
+    REQUEST_TIMEOUT,
+    make_session,
+    sanitize_filename,
+)
 
 logger = logging.getLogger(__name__)
+
+VALID_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".bmp", ".ico"}
 
 
 class WorkshopCrawler:
@@ -24,7 +32,8 @@ class WorkshopCrawler:
         self.base_url = workshop_info["url"].rstrip("/")
         self.lang = lang.lower()
         self.session = make_session(pool_size=DEFAULT_CONCURRENCY * 2)
-        
+        self._img_lock = threading.Lock()
+
         # Directory setup
         base_output = output_dir or Path("output_fcaj")
         self.workshop_dir = base_output / "workshops" / f"{self.ws_id}_{self._sanitize_filename(self.workshop['title'])}"
@@ -35,9 +44,7 @@ class WorkshopCrawler:
         self.downloaded_images: Dict[str, str] = {}  # url -> local relative path
 
     def _sanitize_filename(self, name: str) -> str:
-        clean = re.sub(r'[\\/*?:"<>|]', "", name)
-        clean = re.sub(r'\s+', "_", clean).strip(" ._")
-        return clean[:60] if clean else "workshop"
+        return sanitize_filename(name)
 
     def determine_root_url(self) -> str:
         """Determines the correct starting URL based on language preference."""
@@ -75,7 +82,8 @@ class WorkshopCrawler:
                     self._parse_sidebar_topics(sidebar, root_url, chapters, seen_urls, level=1)
 
                 # Include home page if not already in chapters
-                if root_url not in seen_urls:
+                root_norm = root_url.rstrip("/") + "/"
+                if root_norm not in seen_urls and root_url not in seen_urls:
                     body_home = soup.find("div", id="body-inner")
                     home_title = "Giới thiệu" if self.lang == "vi" else "Overview"
                     if body_home and body_home.find("h1"):
@@ -86,23 +94,26 @@ class WorkshopCrawler:
                         "order": 0,
                         "level": 0
                     })
-                    seen_urls.add(root_url)
+                    seen_urls.add(root_norm)
+                    seen_urls.add(root_url.rstrip("/"))
         except Exception as e:
             logger.error("[%s] Error fetching root URL for chapters: %s", self.ws_id, e)
 
         # Strategy 2: Check sitemap.xml to verify no subpages were missed
         sitemap_urls = self._fetch_sitemap_urls()
         extras = []
-        for sm_url in sorted(set(sitemap_urls)):
+        for raw_sm_url in sorted(set(sitemap_urls)):
+            sm_url = raw_sm_url.split("#")[0]
             norm_url = sm_url.rstrip("/") + "/"
-            if norm_url in seen_urls or sm_url in seen_urls:
+            if norm_url in seen_urls or sm_url in seen_urls or sm_url.rstrip("/") in seen_urls:
                 continue
-            if self.lang == "vi" and "/vi/" not in sm_url:
+            if self.lang == "vi" and "/vi/" not in norm_url:
                 continue
-            if self.lang == "en" and "/vi/" in sm_url:
+            if self.lang == "en" and "/vi/" in norm_url:
                 continue
             extras.append(sm_url)
             seen_urls.add(norm_url)
+            seen_urls.add(sm_url.rstrip("/"))
 
         # Insert each extra page right after the last chapter that is its URL-prefix parent
         for sm_url in extras:
@@ -142,9 +153,9 @@ class WorkshopCrawler:
         for li in parent_elem.find_all("li", recursive=False):
             a = li.find("a", recursive=False)
             if a and a.get("href"):
-                page_url = urljoin(base_url, a["href"])
+                page_url = urljoin(base_url, a["href"]).split("#")[0]
                 norm_url = page_url.rstrip("/") + "/"
-                if norm_url not in seen_urls and page_url not in seen_urls:
+                if norm_url not in seen_urls and page_url not in seen_urls and page_url.rstrip("/") not in seen_urls:
                     title = a.get_text(separator=" ", strip=True)
                     chapters.append({
                         "title": title,
@@ -154,6 +165,7 @@ class WorkshopCrawler:
                     })
                     seen_urls.add(norm_url)
                     seen_urls.add(page_url)
+                    seen_urls.add(page_url.rstrip("/"))
 
             # Check nested sub-topics (sub-chapters)
             sub_ul = li.find("ul", recursive=False)
@@ -177,7 +189,7 @@ class WorkshopCrawler:
                         # Target specific language sitemap
                         if self.lang == "vi" and "/vi/sitemap.xml" in sub_sitemap_url:
                             urls.extend(self._fetch_single_sitemap(sub_sitemap_url))
-                        elif self.lang == "en" and ("/en/sitemap.xml" in sub_sitemap_url or "/sitemap.xml" in sub_sitemap_url):
+                        elif self.lang == "en" and "/vi/sitemap.xml" not in sub_sitemap_url:
                             urls.extend(self._fetch_single_sitemap(sub_sitemap_url))
                     else:
                         urls.append(sub_sitemap_url)
@@ -204,27 +216,27 @@ class WorkshopCrawler:
         slug = urlparse(url).path.strip("/").split("/")[-1]
         slug = unquote(slug)
         slug = re.sub(r"^\d+-", "", slug)
-        return slug.replace("-", " ").title()
+        return slug.replace("-", " ").title() or "Chapter"
 
     def download_image(self, img_url: str) -> Optional[str]:
         """Downloads an image and caches it locally, returning relative local path."""
-        if img_url in self.downloaded_images:
-            return self.downloaded_images[img_url]
+        with self._img_lock:
+            if img_url in self.downloaded_images:
+                return self.downloaded_images[img_url]
 
         try:
             parsed = urlparse(img_url)
-            filename = os.path.basename(parsed.path)
-            if not filename or len(filename) > 50 or "." not in filename:
+            raw_basename = unquote(os.path.basename(parsed.path))
+            name_part, ext_part = os.path.splitext(raw_basename)
+            clean_ext = re.sub(r"[^a-zA-Z0-9.]", "", ext_part.split("?")[0]).lower()
+            if clean_ext not in VALID_IMAGE_EXTENSIONS:
+                clean_ext = ".png"
+
+            if not name_part or "." not in raw_basename:
                 hash_id = hashlib.md5(img_url.encode()).hexdigest()[:10]
-                ext = ".png"
-                filename = f"img_{hash_id}{ext}"
+                filename = f"img_{hash_id}{clean_ext}"
             else:
-                # Sanitize filename
-                name_part, ext_part = os.path.splitext(filename)
-                clean_name = re.sub(r'[^a-zA-Z0-9_\-]', "_", name_part)[:30]
-                clean_ext = ext_part.split("?")[0]
-                if not clean_ext:
-                    clean_ext = ".png"
+                clean_name = re.sub(r"[^a-zA-Z0-9_\-]", "_", name_part).strip("_")[:30] or "img"
                 hash_id = hashlib.md5(img_url.encode()).hexdigest()[:6]
                 filename = f"{clean_name}_{hash_id}{clean_ext}"
 
@@ -232,13 +244,16 @@ class WorkshopCrawler:
             if not local_path.exists():
                 r = self.session.get(img_url, timeout=15)
                 if r.status_code == 200 and len(r.content) > 0:
-                    with open(local_path, "wb") as f:
-                        f.write(r.content)
+                    with self._img_lock:
+                        if not local_path.exists():
+                            with open(local_path, "wb") as f:
+                                f.write(r.content)
                 else:
                     return None
 
             rel_path = f"images/{filename}"
-            self.downloaded_images[img_url] = rel_path
+            with self._img_lock:
+                self.downloaded_images[img_url] = rel_path
             return rel_path
         except Exception as e:
             logger.debug("[%s] Failed to download image %s: %s", self.ws_id, img_url, e)
@@ -282,37 +297,42 @@ class WorkshopCrawler:
 
             # Process images
             images = body_inner.find_all("img")
-            img_download_tasks = []
             img_nodes = []
 
             for img in images:
                 src = img.get("src")
-                if not src:
+                if not src or src.strip().startswith("data:"):
                     continue
-                abs_img_url = urljoin(url, src)
+                abs_img_url = urljoin(url, src.strip())
                 img_nodes.append((img, abs_img_url))
 
-            # Concurrently download images
-            with ThreadPoolExecutor(max_workers=DEFAULT_CONCURRENCY) as executor:
-                future_to_img = {executor.submit(self.download_image, abs_url): (node, abs_url) for node, abs_url in img_nodes}
-                for future in as_completed(future_to_img):
-                    node, abs_url = future_to_img[future]
-                    try:
-                        local_rel = future.result()
-                        if local_rel:
-                            node["src"] = local_rel
-                            # Remove fixed width styles that might distort in print
-                            if "width" in node.attrs and "%" not in str(node.attrs.get("width")):
-                                del node.attrs["width"]
-                        else:
-                            node["src"] = abs_url
-                    except Exception:
-                        node["src"] = abs_url
+            # Concurrently download unique images per chapter
+            unique_urls = list({abs_url for _, abs_url in img_nodes})
+            url_to_local: Dict[str, Optional[str]] = {}
+            if unique_urls:
+                with ThreadPoolExecutor(max_workers=DEFAULT_CONCURRENCY) as executor:
+                    future_to_url = {executor.submit(self.download_image, u): u for u in unique_urls}
+                    for future in as_completed(future_to_url):
+                        u = future_to_url[future]
+                        try:
+                            url_to_local[u] = future.result()
+                        except Exception:
+                            url_to_local[u] = None
+
+            for node, abs_url in img_nodes:
+                local_rel = url_to_local.get(abs_url)
+                if local_rel:
+                    node["src"] = local_rel
+                    # Remove fixed width styles that might distort in print
+                    if "width" in node.attrs and "%" not in str(node.attrs.get("width")):
+                        del node.attrs["width"]
+                else:
+                    node["src"] = abs_url
 
             # Fix relative links to internal anchors or absolute links
             for a in body_inner.find_all("a", href=True):
-                href = a["href"]
-                if not href.startswith("http") and not href.startswith("#") and not href.startswith("mailto:"):
+                href = a["href"].strip()
+                if not href.startswith(("http://", "https://", "#", "mailto:", "javascript:", "tel:", "data:")):
                     a["href"] = urljoin(url, href)
 
             # Return cleaned HTML content

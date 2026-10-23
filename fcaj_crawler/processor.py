@@ -5,12 +5,12 @@ import logging
 from pathlib import Path
 from typing import Dict, List
 
+from fcaj_crawler.config import sanitize_filename
+
 logger = logging.getLogger(__name__)
 
 
 BOOK_CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
 :root {
   --primary: #FF9900;
   --primary-dark: #EC7211;
@@ -26,18 +26,6 @@ BOOK_CSS = """
 @page {
   size: A4;
   margin: 18mm 15mm 20mm 15mm;
-  @bottom-right {
-    content: "Trang " counter(page);
-    font-family: 'Inter', sans-serif;
-    font-size: 8pt;
-    color: #64748B;
-  }
-  @bottom-left {
-    content: "AWS Study Group - The First Cloud Journey";
-    font-family: 'Inter', sans-serif;
-    font-size: 8pt;
-    color: #94A3B8;
-  }
 }
 
 * {
@@ -45,7 +33,7 @@ BOOK_CSS = """
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   color: var(--text-main);
   background: #FFFFFF;
   line-height: 1.65;
@@ -173,7 +161,6 @@ body {
   color: #1E293B;
   font-weight: 600;
   font-size: 11pt;
-  transition: color 0.2s;
 }
 
 .toc-item.level-2 {
@@ -272,7 +259,7 @@ pre {
   padding: 12px 16px;
   border-radius: 6px;
   overflow-x: auto;
-  font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 9pt;
   line-height: 1.5;
   border: 1px solid #334155;
@@ -284,7 +271,7 @@ pre {
 }
 
 code {
-  font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 9pt;
   background-color: #F1F5F9;
   color: #E11D48;
@@ -333,7 +320,6 @@ img {
   margin: 16px auto;
   border-radius: 6px;
   border: 1px solid var(--border-color);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
   page-break-inside: avoid;
   break-inside: avoid;
 }
@@ -377,7 +363,7 @@ li {
 
 
 class WorkshopProcessor:
-    """Assembles crawled chapters into a comprehensive, beautifully styled e-book HTML."""
+    """Assembles crawled chapters into a styled multi-chapter HTML document."""
 
     def __init__(self, workshop_info: Dict, chapters: List[Dict], lang: str = "vi", output_dir: Path = None):
         self.workshop = workshop_info
@@ -388,10 +374,7 @@ class WorkshopProcessor:
         self.ws_dir.mkdir(parents=True, exist_ok=True)
 
     def _sanitize(self, name: str) -> str:
-        import re
-        clean = re.sub(r'[\\/*?:"<>|]', "", name)
-        clean = re.sub(r'\s+', "_", clean).strip(" ._")
-        return clean[:60] if clean else "workshop"
+        return sanitize_filename(name)
 
     def generate_book_html(self) -> Path:
         """Builds the full multi-chapter HTML document with cover page and TOC."""
@@ -420,7 +403,7 @@ class WorkshopProcessor:
         for idx, ch in enumerate(self.chapters):
             anchor = f"ch-{idx+1}"
             ch_title = html.escape(ch.get("title", f"Bài {idx+1}"))
-            ch_url = ch.get("url", "")
+            ch_url = html.escape(ch.get("url", ""))
             raw_html = ch.get("html", "")
 
             chapter_block = f"""
@@ -445,7 +428,7 @@ class WorkshopProcessor:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{html.escape(title)} - Workshop {ws_id}</title>
+  <title>{html.escape(title)} - Workshop {html.escape(ws_id)}</title>
   <style>
     {BOOK_CSS}
   </style>
@@ -456,7 +439,7 @@ class WorkshopProcessor:
   <div class="cover-page">
     <div class="cover-badge">{html.escape(category)}</div>
     <h1 class="cover-title">{html.escape(title)}</h1>
-    <div class="cover-subtitle">Tài liệu hướng dẫn thực hành AWS Study Group • Workshop #{ws_id}</div>
+    <div class="cover-subtitle">Tài liệu thực hành AWS Study Group • Workshop #{html.escape(ws_id)}</div>
     
     <div class="cover-meta">
       <div class="cover-meta-item">
@@ -468,12 +451,12 @@ class WorkshopProcessor:
         <span>{len(self.chapters)} bài học</span>
       </div>
       <div class="cover-meta-item">
-        <span class="cover-meta-label">Ngày xuất bản</span>
+        <span class="cover-meta-label">Ngày tạo</span>
         <span>{now_str}</span>
       </div>
       <div class="cover-meta-item">
         <span class="cover-meta-label">Trang gốc</span>
-        <span><a href="{source_url}" style="color: #FF9900; text-decoration: none;">{ws_id}.awsstudygroup.com</a></span>
+        <span><a href="{html.escape(source_url)}" style="color: #FF9900; text-decoration: none;">{html.escape(ws_id)}.awsstudygroup.com</a></span>
       </div>
     </div>
   </div>

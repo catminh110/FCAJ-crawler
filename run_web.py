@@ -9,7 +9,13 @@ Usage:
 import argparse
 import sys
 import webbrowser
+
+from fcaj_crawler.config import configure_utf8_console
+
+configure_utf8_console()
+
 from fcaj_crawler.web.app import app
+
 
 def main():
     parser = argparse.ArgumentParser(description="FCAJ Crawler Web Dashboard")
@@ -33,6 +39,7 @@ def main():
             pass
 
     app.run(host=args.host, port=args.port, debug=False, threaded=True)
+
 
 if __name__ == "__main__":
     main()

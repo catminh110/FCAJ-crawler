@@ -11,9 +11,17 @@ Usage:
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
 
 WORKSPACE = Path(__file__).resolve().parent.parent
 INSTANCE_FILE = WORKSPACE / "data" / "ec2_instance.json"
@@ -36,10 +44,19 @@ def save_instance_info(data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 
-def run_aws_cmd(args):
-    cmd = ["aws"] + args + ["--profile", PROFILE, "--region", REGION, "--output", "json"]
-    res = subprocess.run(cmd, capture_output=True, text=True)
+def run_aws_cmd(args, exit_on_error: bool = True):
+    aws_bin = shutil.which("aws") or "aws"
+    cmd = [aws_bin] + args + ["--profile", PROFILE, "--region", REGION, "--output", "json"]
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    except OSError as e:
+        if not exit_on_error:
+            raise RuntimeError(f"Không tìm thấy AWS CLI: {e}") from e
+        print(f"❌ Không tìm thấy AWS CLI: {e}")
+        sys.exit(1)
     if res.returncode != 0:
+        if not exit_on_error:
+            raise RuntimeError(res.stderr.strip() or f"AWS CLI exited with {res.returncode}")
         print(f"❌ Lỗi AWS CLI: {res.stderr}")
         sys.exit(res.returncode)
     try:
@@ -115,18 +132,17 @@ def cmd_stop(args):
 
 def cmd_budget(args):
     print("💰 Đang kiểm tra thông tin ngân sách & kiểm soát credit trên AWS...")
-    
+
     # Check AWS Budgets
     try:
-        # Get account ID
-        ident = run_aws_cmd(["sts", "get-caller-identity"])
-        acc_id = ident.get("Account")
+        ident = run_aws_cmd(["sts", "get-caller-identity"], exit_on_error=False)
+        acc_id = ident.get("Account") if isinstance(ident, dict) else None
         if acc_id:
-            budgets = run_aws_cmd(["budgets", "describe-budgets", "--account-id", acc_id])
-            b_list = budgets.get("Budgets", [])
+            budgets = run_aws_cmd(["budgets", "describe-budgets", "--account-id", acc_id], exit_on_error=False)
+            b_list = budgets.get("Budgets", []) if isinstance(budgets, dict) else []
         else:
             b_list = []
-    except Exception as e:
+    except Exception:
         b_list = []
 
     print("\n" + "=" * 60)
@@ -139,7 +155,7 @@ def cmd_budget(args):
     print("• Cơ chế Auto-Stop   : CloudWatch tự động ngắt máy sau 15 phút idle (<2% CPU)")
     print("• Giờ cào tối đa/thg : ~200 giờ cào thực tế (cào 127 bài chỉ tốn ~2-3 giờ)")
     print("-" * 60)
-    
+
     if b_list:
         print("📊 CÁC BUDGET ĐANG THEO DÕI TRÊN AWS ACCOUNT:")
         for b in b_list:
@@ -148,7 +164,7 @@ def cmd_budget(args):
             unit = b.get("BudgetLimit", {}).get("Unit", "USD")
             spend = b.get("CalculatedSpend", {}).get("ActualSpend", {}).get("Amount", "0.0")
             print(f"  - {b_name}: Đã tiêu ${spend} / Hạn mức ${limit} {unit}")
-    
+
     print("-" * 60)
     print("💡 MẸO TIẾT KIỆM CREDIT:")
     print("  1. Khi cào xong, gõ: python deploy/manage_ec2.py stop")

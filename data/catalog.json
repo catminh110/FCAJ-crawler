@@ -53,7 +53,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 1,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000002",
@@ -64,7 +65,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 2,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000003",
@@ -75,7 +77,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 3,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000004",
@@ -86,7 +89,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 4,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000005",
@@ -97,7 +101,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 5,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000006",
@@ -108,7 +113,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 6,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000007",
@@ -119,7 +125,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 7,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000008",
@@ -130,7 +137,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 8,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000009",
@@ -141,7 +149,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 9,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000010",
@@ -152,7 +161,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 10,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000011",
@@ -163,7 +173,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 11,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000012",
@@ -174,7 +185,8 @@
       "subcategory": "Security",
       "sort_key": 12,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000013",
@@ -185,7 +197,8 @@
       "subcategory": "Reliability",
       "sort_key": 13,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000014",
@@ -196,7 +209,8 @@
       "subcategory": "Migrate to AWS",
       "sort_key": 14,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "2-migrate"
     },
     {
       "id": "000015",
@@ -207,7 +221,8 @@
       "subcategory": "Performance",
       "sort_key": 15,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000016",
@@ -218,7 +233,8 @@
       "subcategory": "Performance",
       "sort_key": 16,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000017",
@@ -229,7 +245,8 @@
       "subcategory": "Performance",
       "sort_key": 17,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000018",
@@ -240,7 +257,8 @@
       "subcategory": "Security",
       "sort_key": 18,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000019",
@@ -251,7 +269,8 @@
       "subcategory": "Reliability",
       "sort_key": 19,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000020",
@@ -262,7 +281,8 @@
       "subcategory": "Reliability",
       "sort_key": 20,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000021",
@@ -273,7 +293,8 @@
       "subcategory": "WordPress on AWS",
       "sort_key": 21,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000022",
@@ -284,7 +305,8 @@
       "subcategory": "Operations",
       "sort_key": 22,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000023",
@@ -295,7 +317,8 @@
       "subcategory": "Performance",
       "sort_key": 23,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000024",
@@ -306,7 +329,8 @@
       "subcategory": "Performance",
       "sort_key": 24,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000025",
@@ -317,7 +341,8 @@
       "subcategory": "Performance",
       "sort_key": 25,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000026",
@@ -328,7 +353,8 @@
       "subcategory": "Security",
       "sort_key": 26,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000027",
@@ -339,7 +365,8 @@
       "subcategory": "Operations",
       "sort_key": 27,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000028",
@@ -350,7 +377,8 @@
       "subcategory": "Operations",
       "sort_key": 28,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000029",
@@ -361,7 +389,8 @@
       "subcategory": "Operations",
       "sort_key": 29,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000030",
@@ -372,7 +401,8 @@
       "subcategory": "Security",
       "sort_key": 30,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000031",
@@ -383,7 +413,8 @@
       "subcategory": "Operations",
       "sort_key": 31,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000032",
@@ -394,7 +425,8 @@
       "subcategory": "Operations",
       "sort_key": 32,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000033",
@@ -405,7 +437,8 @@
       "subcategory": "Security",
       "sort_key": 33,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000034",
@@ -416,7 +449,8 @@
       "subcategory": "Cost Optimization",
       "sort_key": 34,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000035",
@@ -427,7 +461,8 @@
       "subcategory": "Data Lake",
       "sort_key": 35,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000036",
@@ -449,7 +484,8 @@
       "subcategory": "Operations",
       "sort_key": 37,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000038",
@@ -471,7 +507,8 @@
       "subcategory": "Performance",
       "sort_key": 39,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000040",
@@ -482,7 +519,8 @@
       "subcategory": "Cost Optimization",
       "sort_key": 40,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000042",
@@ -493,7 +531,8 @@
       "subcategory": "Cost Optimization",
       "sort_key": 42,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000043",
@@ -504,7 +543,8 @@
       "subcategory": "Migrate to AWS",
       "sort_key": 43,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "2-migrate"
     },
     {
       "id": "000044",
@@ -515,7 +555,8 @@
       "subcategory": "Security",
       "sort_key": 44,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000045",
@@ -526,7 +567,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 45,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000046",
@@ -537,7 +579,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 46,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "5-container"
     },
     {
       "id": "000047",
@@ -548,7 +591,8 @@
       "subcategory": "Performance",
       "sort_key": 47,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000048",
@@ -559,7 +603,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 48,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000049",
@@ -570,7 +615,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 49,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000050",
@@ -581,7 +627,8 @@
       "subcategory": "Serverless - DevAx Series",
       "sort_key": 50,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000051",
@@ -592,7 +639,8 @@
       "subcategory": "Serverless - DevAx Series",
       "sort_key": 51,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000052",
@@ -603,7 +651,8 @@
       "subcategory": "Serverless - DevAx Series",
       "sort_key": 52,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000053",
@@ -614,7 +663,8 @@
       "subcategory": "Serverless - DevAx Series",
       "sort_key": 53,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000054",
@@ -625,7 +675,8 @@
       "subcategory": "Serverless - DevAx Series",
       "sort_key": 54,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000055",
@@ -636,7 +687,8 @@
       "subcategory": "Serverless - DevAx Series",
       "sort_key": 55,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000056",
@@ -647,7 +699,8 @@
       "subcategory": "Serverless - DevAx Series",
       "sort_key": 56,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000057",
@@ -658,7 +711,8 @@
       "subcategory": "Explore AWS Services",
       "sort_key": 57,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "1-explore"
     },
     {
       "id": "000058",
@@ -669,7 +723,8 @@
       "subcategory": "Operations",
       "sort_key": 58,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "3-optimize"
     },
     {
       "id": "000060",
@@ -702,7 +757,8 @@
       "subcategory": "Amazon EKS Workshop",
       "sort_key": 62,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "5-container"
     },
     {
       "id": "000063",
@@ -757,7 +813,8 @@
       "subcategory": "Amazon ECS Workshop",
       "sort_key": 67,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "5-container"
     },
     {
       "id": "000068",
@@ -790,7 +847,8 @@
       "subcategory": "Data Lake",
       "sort_key": 70,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "6-dataandanalytic"
     },
     {
       "id": "000071",
@@ -812,7 +870,8 @@
       "subcategory": "Analytics & Business Intelligence",
       "sort_key": 72,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "6-dataandanalytic"
     },
     {
       "id": "000073",
@@ -823,7 +882,8 @@
       "subcategory": "Analytics & Business Intelligence",
       "sort_key": 73,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "6-dataandanalytic"
     },
     {
       "id": "000074",
@@ -878,7 +938,8 @@
       "subcategory": "Serverless - Book Store Series",
       "sort_key": 78,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000079",
@@ -889,7 +950,8 @@
       "subcategory": "Serverless - Book Store Series",
       "sort_key": 79,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000080",
@@ -900,7 +962,8 @@
       "subcategory": "Serverless - Book Store Series",
       "sort_key": 80,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000081",
@@ -911,7 +974,8 @@
       "subcategory": "Serverless - Book Store Series",
       "sort_key": 81,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000082",
@@ -922,7 +986,8 @@
       "subcategory": "Serverless - Book Store Series",
       "sort_key": 82,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000083",
@@ -933,7 +998,8 @@
       "subcategory": "Serverless - Book Store Series",
       "sort_key": 83,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000084",
@@ -944,7 +1010,8 @@
       "subcategory": "Serverless - Book Store Series",
       "sort_key": 84,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000085",
@@ -955,7 +1022,8 @@
       "subcategory": "Serverless - Book Store Series",
       "sort_key": 85,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000086",
@@ -966,7 +1034,8 @@
       "subcategory": "Serverless - Book Store Series",
       "sort_key": 86,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "4-modernize"
     },
     {
       "id": "000087",
@@ -1252,7 +1321,8 @@
       "subcategory": "Amazon EKS Workshop",
       "sort_key": 126,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "5-container"
     },
     {
       "id": "000130",
@@ -1373,7 +1443,8 @@
       "subcategory": "Performance",
       "sort_key": 152,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "5-container"
     },
     {
       "id": "000200",
@@ -1384,7 +1455,8 @@
       "subcategory": "Machine Learning Essentials",
       "sort_key": 200,
       "has_vi": true,
-      "has_en": true
+      "has_en": true,
+      "category_slug": "7-aimlservice"
     },
     {
       "id": "100000",

@@ -1,210 +1,104 @@
-# 🚀 FCAJ Crawler & PDF Studio
+# FCAJ Crawler
 
-Phần mềm tự động thu thập (cào) toàn bộ dữ liệu từ cổng **Cloud Journey (AWS Study Group)** tại [https://cloudjourney.awsstudygroup.com](https://cloudjourney.awsstudygroup.com) và **toàn bộ 127+ trang web con / workshop** (như `000001.awsstudygroup.com`, `000002.awsstudygroup.com`,...), tải toàn bộ ảnh hướng dẫn và xuất ra **Markdown** (dễ đọc, dễ tìm kiếm, dễ đưa vào Obsidian/Notion/GitHub) và/hoặc **PDF chuẩn sách A4** có trang bìa, mục lục và đánh số trang.
-
-> 🌐 **Link Web Live trên AWS Cloud**: **[http://44.203.216.21/](http://44.203.216.21/)**  
-> *(Hệ thống được triển khai trên máy chủ AWS EC2 `t3.small` với cơ chế bảo vệ ngân sách $200 credit và tự động dừng khi nhàn rỗi)*
+Công cụ thu thập dữ liệu từ cổng **Cloud Journey (AWS Study Group)** tại [https://cloudjourney.awsstudygroup.com](https://cloudjourney.awsstudygroup.com) và các trang workshop con (`000001.awsstudygroup.com`, `000002.awsstudygroup.com`,...), tải hình ảnh đi kèm và xuất ra **Markdown** hoặc **PDF khổ A4** có trang bìa, mục lục và đánh số trang.
 
 ---
 
-## 🌟 Tính Năng Nổi Bật
+## Tính năng chính
 
-1. **Quét tự động toàn bộ 127+ Web Con**:
-   - Tự động nhận diện toàn bộ các subdomain workshop thuộc AWS Study Group (`000001` đến `000200`+).
-   - Khám phá toàn bộ danh mục: *1. Explore AWS Services, 2. Migrate, 3. Optimize, 4. Modernize, 5. Container, 6. Data & Analytics, 7. AI/ML, 8. FCJ Workforce*.
-2. **Thu thập từng chương & trang con chi tiết**:
-   - Đọc cây điều hướng sidebar của theme Hugo và sitemap (`/sitemap.xml`, `/vi/sitemap.xml`).
-   - Cào tuần tự đúng thứ tự bài học từ Chương 1 đến Chương cuối cùng.
-3. **Tải toàn bộ hình ảnh ngoại tuyến (Full Offline Assets)**:
-   - Tự động tải về hàng chục ảnh chụp màn hình từng bước (screenshots) của mỗi bài.
-   - Lưu trữ cục bộ trong thư mục `images/` của từng workshop.
-4. **Biên soạn sách PDF chuyên nghiệp (Publication-grade PDF)**:
-   - **Trang bìa (Cover Page)**: Thiết kế gradient hiện đại, logo chủ đề, tên workshop, tác giả, ngày tạo.
-   - **Mục lục (Table of Contents)**: Tự động đánh số chương và liên kết nhảy nhanh.
-   - **Định dạng code & bảng biểu**: Giữ nguyên syntax highlighting, callout box (chú thích/cảnh báo) và font chữ Inter/JetBrains Mono.
-   - **Đánh số trang chân trang**: Hiển thị "Trang X / Y" và nguồn link bài gốc.
-5. **Đa dạng giao diện sử dụng**:
-   - **Giao diện Web Dashboard**: Trực quan, hiển thị thanh tiến trình thời gian thực, bảng chọn lọc workshop, tải và xem file PDF trực tiếp.
-   - **Giao diện dòng lệnh CLI**: Thích hợp cho việc chạy script tự động hoặc cào hàng loạt.
+1. **Quét danh mục tự động**:
+   - Phát hiện các subdomain workshop thuộc AWS Study Group theo từng danh mục (*Explore AWS Services, Migrate, Optimize, Modernize, Container, Data & Analytics, AI/ML, FCJ Workforce*).
+2. **Thu thập chương bài theo thứ tự**:
+   - Đọc cây điều hướng sidebar của Hugo và đối chiếu với `sitemap.xml` (`/sitemap.xml`, `/vi/sitemap.xml`).
+   - Loại bỏ các trang phân loại rác (`Tags`, `Categories`).
+3. **Tải hình ảnh phục vụ xem ngoại tuyến**:
+   - Lưu trữ cục bộ toàn bộ ảnh minh họa trong thư mục `images/` của từng workshop.
+4. **Xuất Markdown & PDF (từng bài hoặc gộp 1 file duy nhất)**:
+   - **Markdown**: Xuất bản tách từng chương, bản gộp từng bài (có hỗ trợ tải gói `.zip` kèm ảnh) và bản gộp toàn bộ hệ thống (`FCAJ_ALL_VI.md`).
+   - **PDF**: Kết xuất qua trình duyệt Chromium/Chrome headless khổ A4 kèm trang bìa, mục lục và hỗ trợ ghép toàn bộ bài thành 1 cuốn PDF duy nhất (`FCAJ_ALL_VI.pdf`) có cây Bookmark.
+5. **Giao diện Web & CLI**:
+   - Hỗ trợ bảng điều khiển Web trực quan (cho phép chọn thư mục lưu bất kỳ trên máy) và công cụ dòng lệnh (CLI).
 
 ---
 
-## 📁 Cấu Trúc Dự Án
-
-```
-FCAJ crawler/
-├── fcaj_crawler/                 # Mã nguồn lõi của phần mềm
-│   ├── config.py                 # Cấu hình đường dẫn, thời gian timeout, thiết lập PDF
-│   ├── scanner.py                # Quét và trích xuất danh sách 127+ workshop từ cổng chính
-│   ├── crawler.py                # Cào nội dung từng chương, trang con và tải toàn bộ ảnh
-│   ├── processor.py              # Xử lý HTML, làm sạch và biên soạn thành sách (Cover + TOC)
-│   ├── pdf_generator.py          # Render PDF chuẩn A4 bằng Playwright Chromium
-│   ├── runner.py                 # Điều phối tiến trình (CrawlManager), lưu trạng thái
-│   └── web/                      # Giao diện Web Dashboard
-│       ├── app.py                # Flask server, API & Server-Sent Events (SSE)
-│       ├── templates/index.html  # Giao diện người dùng hiện đại
-│       └── static/               # CSS Slate/Dark theme & JavaScript điều khiển
-├── output_fcaj/                  # Thư mục lưu trữ kết quả cào & file PDF
-│   └── workshops/
-│       └── 000001_Creating_Your_First_AWS_Account/
-│           ├── 000001_Creating_Your_First_AWS_Account_VI.pdf   <-- File PDF hoàn chỉnh
-│           ├── book_vi.html                                    <-- Bản HTML tổng hợp
-│           ├── metadata_vi.json                                <-- Thông tin bài học
-│           └── images/                                         <-- Toàn bộ ảnh hướng dẫn
-├── run_web.py                    # Khởi động Giao diện Web Dashboard
-├── run_crawler.py                # Khởi động Giao diện Dòng lệnh (CLI)
-├── requirements.txt              # Danh sách thư viện Python
-└── README.md
-```
-
----
-
-## 🛠 Hướng Dẫn Cài Đặt
-
-### 1. Chuẩn bị môi trường Python
-
-Khởi tạo môi trường ảo và cài đặt thư viện cần thiết:
+## Cài đặt
 
 ```bash
-# Tạo môi trường ảo
-python3 -m venv .venv
+# 1. Tạo và kích hoạt môi trường ảo
+python -m venv .venv
+# Trên Windows:
+.\.venv\Scripts\activate
+# Trên Linux/macOS:
 source .venv/bin/activate
 
-# Cài đặt các gói phụ thuộc
+# 2. Cài đặt thư viện
 pip install -r requirements.txt
 
-# Cài đặt trình duyệt Chromium cho Playwright
+# 3. Cài đặt trình duyệt Chromium cho Playwright (hoặc sử dụng Google Chrome/Edge sẵn có trên máy)
 playwright install chromium
 ```
 
 ---
 
-## 🚀 Cách Sử Dụng
+## Cách sử dụng
 
-### Cách 1: Sử dụng Giao Diện Web Dashboard (Khuyên Dùng)
-
-Chạy lệnh sau:
+### 1. Giao diện Web
 
 ```bash
 python run_web.py
 ```
 
-Dashboard sẽ tự động mở trên trình duyệt tại: **`http://127.0.0.1:5000`**
+Mở trình duyệt tại **`http://127.0.0.1:5000`** để tìm kiếm, lọc theo danh mục, chọn định dạng (`Markdown`, `PDF`, hoặc `Cả hai`) và tải tài liệu.
 
-Tại đây bạn có thể:
-1. Tìm kiếm và chọn lọc bất kỳ workshop nào trong 127 workshop.
-2. Chọn ngôn ngữ (*Tiếng Việt* hoặc *English* hoặc *Cả hai*).
-3. Nhấn **"Bắt đầu cào PDF"** và xem tiến trình cùng log trực tiếp.
-4. Xem trước hoặc tải trực tiếp file PDF đã xuất ngay trên trang web.
+### 2. Dòng lệnh (CLI)
 
----
-
-### Cách 2: Sử dụng Dòng Lệnh (CLI)
-
-#### 1. Quét danh mục và xem toàn bộ workshop
 ```bash
+# Quét và liệt kê danh sách workshop
 python run_crawler.py scan
 python run_crawler.py list
-```
 
-#### 2. Cào thử nghiệm 1 workshop cụ thể (Ví dụ ID `000001`):
-```bash
+# Cào 1 hoặc nhiều workshop theo ID
 python run_crawler.py crawl --id 000001 --lang vi
-```
+python run_crawler.py crawl --id 000001,000002 --lang vi --format both
 
-#### 3. Cào nhiều workshop cùng lúc:
-```bash
-python run_crawler.py crawl --id 000001,000002,000003 --lang vi
-```
+# Cào theo danh mục hoặc từ khóa
+python run_crawler.py crawl --category 1-explore --lang vi --format md
+python run_crawler.py crawl --search ec2 --lang vi --format pdf
 
-#### 4. Cào theo Danh mục (Category):
-```bash
-# Cào toàn bộ các bài trong danh mục "Explore AWS Services"
-python run_crawler.py crawl --category 1-explore --lang vi
+# Cào toàn bộ hệ thống và tự động gộp thành 1 file duy nhất
+python run_crawler.py crawl --all --lang vi --bundle
 
-# Cào toàn bộ danh mục Migrate
-python run_crawler.py crawl --category 2-migrate --lang vi
-```
+# Gộp các workshop đã tải sẵn trên máy thành 1 file FCAJ_ALL duy nhất (không cần tải lại)
+python run_crawler.py bundle --lang vi --format both
 
-#### 5. Cào theo từ khóa:
-```bash
-python run_crawler.py crawl --search ec2 --lang vi
-python run_crawler.py crawl --search dynamodb --lang vi
-```
-
-#### 6. Cào TOÀN BỘ 127+ workshop trên toàn bộ hệ thống:
-```bash
-python run_crawler.py crawl --all --lang vi
-```
-
-*Mẹo*: Để cào cả tiếng Anh và tiếng Việt, thêm cờ `--lang both`.
-
-#### 7. Chọn định dạng xuất (`--format`)
-```bash
-python run_crawler.py crawl --all --lang vi --format md     # chỉ Markdown (nhanh nhất)
-python run_crawler.py crawl --all --lang vi --format pdf    # chỉ PDF
-python run_crawler.py crawl --all --lang vi --format both   # cả hai (mặc định)
+# Tuỳ chọn lưu vào thư mục bất kỳ với cờ -o / --output
+python run_crawler.py crawl --id 000001 -o "D:\AWS_Workshops"
 ```
 
 ---
 
-## 📝 Dữ Liệu Markdown
+## Cấu trúc thư mục xuất (`output_fcaj/`)
 
-Mỗi workshop được lưu trong `output_fcaj/workshops/<ID>_<Tên>/`:
-
+```text
+output_fcaj/
+├── INDEX.md                              # Mục lục tổng hợp các workshop đã tải
+├── FCAJ_ALL_VI.md                        # Bản Markdown gộp toàn bộ các workshop
+├── FCAJ_ALL_VI.pdf                       # Bản PDF gộp toàn bộ các workshop (kèm Bookmark)
+└── workshops/
+    └── 000001_Creating_Your_First_AWS_Account/
+        ├── README.md                     # Thông tin & mục lục của workshop
+        ├── 000001_..._VI.md              # Bản Markdown gộp 1 file
+        ├── 000001_..._VI.pdf             # Bản PDF khổ A4
+        ├── book_vi.html                  # Bản HTML tổng hợp
+        ├── chapters_vi/                  # Thư mục chứa từng chương rời (.md)
+        ├── images/                       # Hình ảnh đã tải về
+        └── metadata_vi.json              # Metadata của workshop
 ```
-000004_Compute_Essentials_with_Amazon_Elastic_Compute_Cloud_(EC2)/
-├── README.md                        # Thông tin + mục lục (có phân cấp chương cha/con)
-├── 000004_..._VI.md                 # Toàn bộ workshop gộp trong 1 file
-├── chapters_vi/                     # Mỗi chương 1 file, có nút ← Bài trước / Bài tiếp →
-│   ├── 00-gioi-thieu-ve-amazon-ec2.md
-│   ├── 01-gioi-thieu.md
-│   └── ...
-├── images/                          # Ảnh dùng chung (link tương đối, xem offline được)
-├── metadata_vi.json                 # Danh sách chương, URL gốc, thời gian cào
-└── 000004_..._VI.pdf                # (nếu xuất PDF)
-```
-
-Mục lục tổng của mọi workshop đã cào: **`output_fcaj/INDEX.md`** (tự cập nhật sau mỗi lần chạy).
-
-Xử lý khi chuyển sang Markdown:
-- Khối code giữ ngôn ngữ (` ```bash `, ` ```json `...).
-- Hộp ghi chú của Hugo (info/note/tip/warning) → blockquote có nhãn.
-- Bỏ trang rác `Tags` / `Categories`; trang chỉ có trong sitemap được chèn đúng sau chương cha.
 
 ---
 
-## 📑 File PDF Kết Quả
+## Kiểm thử
 
-Tất cả các file PDF được xuất vào thư mục:
-`output_fcaj/workshops/<ID>_<Tên Workshop>/<ID>_<Tên>_<NGÔN_NGỮ>.pdf`
-
-Ví dụ:
-- `output_fcaj/workshops/000001_Creating_Your_First_AWS_Account/000001_Creating_Your_First_AWS_Account_VI.pdf` (khoảng 15 MB, chứa trọn vẹn 13 chương và 98 ảnh hướng dẫn chất lượng cao).
-
----
-
-## ☁️ Quản Lý Máy Chủ AWS EC2 & Kiểm Soát Ngân Sách ($20 / 3 Tháng)
-
-Máy chủ được khởi tạo trên **AWS EC2 (`t3.small`)** tại Region `us-east-1`:
-- **Web App Trực Tuyến**: [http://44.203.216.21/](http://44.203.216.21/)
-- **Hạn mức khống chế**: **$20.00 cho 3 tháng** (~$6.67/tháng) qua AWS Budget `FCAJ-Crawler-Monthly-6.67USD`.
-- **Cơ chế Auto-Stop**: Đã cài đặt **CloudWatch Auto-Stop** (`fcaj-crawler-auto-stop`) tự động **STOP máy sau 15 phút idle (< 2% CPU)** nếu bạn không chạy tác vụ crawl nào.
-
-Bạn có thể quản lý máy chủ từ xa trực tiếp bằng CLI:
 ```bash
-# Xem trạng thái máy chủ & link web trực tiếp
-python deploy/manage_ec2.py status
-
-# Kiểm tra ngân sách $20/3 tháng và chi tiêu thực tế trên AWS
-python deploy/manage_ec2.py budget
-
-# Bật máy chủ khi cần cào tài liệu
-python deploy/manage_ec2.py start
-
-# Tắt máy chủ khi hoàn thành để NGỪNG tính phí CPU/RAM (chỉ tốn ~$2.4/tháng tiền ổ cứng)
-python deploy/manage_ec2.py stop
-
-# Khởi động lại máy chủ
-python deploy/manage_ec2.py reboot
+pytest -v
 ```

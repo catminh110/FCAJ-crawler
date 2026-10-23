@@ -10,9 +10,9 @@ from bs4 import BeautifulSoup
 from fcaj_crawler.config import (
     CATALOG_CACHE_FILE,
     DEFAULT_HEADERS,
-    make_session,
     MAIN_HUB_URL,
     REQUEST_TIMEOUT,
+    make_session,
 )
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class CatalogScanner:
         workshops_map: Dict[str, Dict] = {}
 
         # 1. Parse workshops directly from the main hub page content
-        self._extract_workshops_from_soup(main_soup, "Trang chủ", workshops_map)
+        self._extract_workshops_from_soup(main_soup, "Trang chủ", workshops_map, category_slug="")
 
         # 2. Parse workshops from each category page for completeness
         total_cats = len(categories)
@@ -79,11 +79,16 @@ class CatalogScanner:
                 if cat_resp.status_code == 200:
                     cat_resp.encoding = "utf-8"
                     cat_soup = BeautifulSoup(cat_resp.content, "lxml")
-                    self._extract_workshops_from_soup(cat_soup, cat["title"], workshops_map)
+                    self._extract_workshops_from_soup(
+                        cat_soup,
+                        cat["title"],
+                        workshops_map,
+                        category_slug=cat.get("slug", ""),
+                    )
             except Exception as ex:
                 logger.warning("Error scanning category %s: %s", cat["url"], ex)
-            
-            if progress_callback:
+
+            if progress_callback and total_cats > 0:
                 percent = 20 + int(70 * (idx + 1) / total_cats)
                 progress_callback(f"Đang quét danh mục: {cat['title']}...", percent)
 
@@ -111,10 +116,16 @@ class CatalogScanner:
 
         return result
 
-    def _extract_workshops_from_soup(self, soup: BeautifulSoup, current_category: str, workshops_map: Dict[str, Dict]):
+    def _extract_workshops_from_soup(
+        self,
+        soup: BeautifulSoup,
+        current_category: str,
+        workshops_map: Dict[str, Dict],
+        category_slug: str = "",
+    ):
         """Parses links inside body content that point to child workshop subdomains."""
         body = soup.find("div", id="body-inner") or soup.find("section", id="body") or soup
-        
+
         # Look at list items and links
         for a in body.find_all("a", href=True):
             href = a["href"].strip()
@@ -123,8 +134,7 @@ class CatalogScanner:
             netloc = parsed.netloc.lower()
 
             # Match subdomains like 000001.awsstudygroup.com, 100002.awsstudygroup.com
-            if "awsstudygroup.com" in netloc and netloc != "cloudjourney.awsstudygroup.com" and netloc != "awsstudygroup.com":
-                # Extract numeric or sub-id
+            if "awsstudygroup.com" in netloc and netloc not in ("cloudjourney.awsstudygroup.com", "awsstudygroup.com"):
                 subdomain_prefix = netloc.split(".")[0]
                 ws_id = subdomain_prefix
 
@@ -151,7 +161,7 @@ class CatalogScanner:
                 workshop_url = f"https://{netloc}"
 
                 if ws_id not in workshops_map:
-                    workshops_map[ws_id] = {
+                    entry = {
                         "id": ws_id,
                         "title": title,
                         "domain": netloc,
@@ -162,12 +172,19 @@ class CatalogScanner:
                         "has_vi": True,
                         "has_en": True
                     }
+                    if category_slug:
+                        entry["category_slug"] = category_slug
+                    workshops_map[ws_id] = entry
                 else:
                     # Update category if previously set to generic home
                     if workshops_map[ws_id]["category"] == "Trang chủ" and current_category != "Trang chủ":
                         workshops_map[ws_id]["category"] = current_category
+                    if category_slug and not workshops_map[ws_id].get("category_slug"):
+                        workshops_map[ws_id]["category_slug"] = category_slug
                     if subcategory and not workshops_map[ws_id].get("subcategory"):
                         workshops_map[ws_id]["subcategory"] = subcategory
+                    if workshops_map[ws_id]["title"] == f"Workshop {ws_id}" and title != f"Workshop {ws_id}":
+                        workshops_map[ws_id]["title"] = title
 
     @staticmethod
     def load_cached_catalog() -> Optional[Dict]:
